@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中国历代皇室家族 — 从秦到清</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ===== 首页专属样式 ===== */
+
+    /* Hero 区域 */
+    .hero {
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 40%, #3a1a1a 100%);
+      color: #f5f0eb;
+      padding: 40px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 50%, rgba(139,26,26,0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 30%, rgba(26,26,46,0.3) 0%, transparent 50%);
+      animation: heroGlow 20s ease-in-out infinite alternate;
+    }
+    @keyframes heroGlow {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(-5%, 5%); }
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+    }
+    .hero h1 {
+      font-family: var(--font-title);
+      font-size: 3.2rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+      letter-spacing: 4px;
+    }
+    .hero .hero-sub {
+      font-size: 1.15rem;
+      color: rgba(245,240,235,0.7);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .hero .hero-meta {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      color: rgba(245,240,235,0.5);
+    }
+    .hero .hero-meta span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 介绍区 */
+    .intro-section {
+      padding: 80px 24px;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .intro-section p {
+      font-size: 1.05rem;
+      color: var(--color-muted);
+      line-height: 1.9;
+    }
+
+    /* 时间轴 */
+    .timeline-section {
+      padding: 60px 24px 80px;
+    }
+    .timeline-wrap {
+      position: relative;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+    .timeline-line {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-accent), var(--color-border));
+      transform: translateX(-50%);
+    }
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .timeline-item:nth-child(odd) {
+      flex-direction: row;
+    }
+    .timeline-item:nth-child(even) {
+      flex-direction: row-reverse;
+    }
+    .timeline-item .tl-label {
+      width: 50%;
+      padding: 0 30px;
+      text-align: center;
+    }
+    .timeline-item .tl-label a {
+      display: inline-block;
+      padding: 8px 20px;
+      background: var(--color-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--color-border);
+      font-weight: 600;
+      color: var(--color-text);
+      transition: all var(--transition);
+      font-size: 0.95rem;
+    }
+    .timeline-item .tl-label a:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      box-shadow: var(--shadow-hover);
+    }
+    .timeline-item .tl-label .tl-years {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .timeline-item .tl-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      border: 3px solid var(--color-bg);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    /* 朝代卡片网格 */
+    .dynasty-grid-section {
+      padding: 0 24px 80px;
+    }
+    .dynasty-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .dynasty-card {
+      background: var(--color-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+      transition: box-shadow var(--transition), transform var(--transition);
+      cursor: pointer;
+    }
+    .dynasty-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-4px);
+    }
+    .dynasty-card .card-visual {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 8px;
+    }
+    .dynasty-card .card-body {
+      padding: 20px;
+    }
+    .dynasty-card .card-body .card-name {
+      font-family: var(--font-title);
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .dynasty-card .card-body .card-surname {
+      font-size: 0.85rem;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .dynasty-card .card-body .card-years {
+      font-size: 0.85rem;
+      color: var(--color-muted);
+      margin-bottom: 10px;
+    }
+    .dynasty-card .card-body .card-desc {
+      font-size: 0.9rem;
+      color: var(--color-text);
+      line-height: 1.6;
+    }
+    .dynasty-card .card-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--color-border);
+      font-size: 0.85rem;
+      color: var(--color-accent);
+      font-weight: 500;
+    }
+
+    /* 每个朝代卡片不同的渐变色 */
+    .cv-qin    { background: linear-gradient(135deg, #2d2d2d, #5a4a3a); }
+    .cv-han    { background: linear-gradient(135deg, #8b1a1a, #c0392b); }
+    .cv-jin    { background: linear-gradient(135deg, #4a6741, #6b8e5a); }
+    .cv-nanbei { background: linear-gradient(135deg, #5a4a7a, #7a6a9a); }
+    .cv-sui    { background: linear-gradient(135deg, #8b6914, #b8942e); }
+    .cv-tang   { background: linear-gradient(135deg, #c0392b, #e67e22); }
+    .cv-song   { background: linear-gradient(135deg, #2c3e50, #4a6a8a); }
+    .cv-yuan   { background: linear-gradient(135deg, #6a4a2a, #9a7a4a); }
+    .cv-ming   { background: linear-gradient(135deg, #8b1a1a, #d4a017); }
+    .cv-qing   { background: linear-gradient(135deg, #1a3a2a, #2d6a4f); }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+      .hero .hero-sub { font-size: 1rem; }
+      .hero .hero-meta { gap: 16px; font-size: 0.8rem; }
+      .timeline-line { left: 20px; }
+      .timeline-item, .timeline-item:nth-child(even) {
+        flex-direction: row;
+        padding-left: 44px;
+      }
+      .timeline-item .tl-label {
+        width: 100%;
+        padding: 0 12px;
+        text-align: left;
+      }
+      .timeline-item .tl-dot {
+        left: 20px;
+      }
+      .dynasty-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .dynasty-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="hero-inner fade-in">
+      <h1>中国历代皇室家族</h1>
+      <p class="hero-sub">
+        从秦朝到清朝，两千余年的王朝更迭中，<br>
+        皇室家族的兴衰与血脉传承，构成了中国历史最深邃的底色。
+      </p>
+      <div class="hero-meta">
+        <span>🏛️ 10 个主要王朝</span>
+        <span>📜 跨越 2100+ 年</span>
+        <span>👑 数十个皇室家族</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 介绍 ===== -->
+  <section class="intro-section fade-in">
+    <p>
+      本网站系统性梳理中国历史上从秦汉到明清的主要王朝皇室家族背景。<br>
+      每个朝代独立成篇，涵盖家族渊源、开国历程、鼎盛治理、著名成员、世系脉络与最终衰落。
+    </p>
+  </section>
+
+  <!-- ===== 时间轴 ===== -->
+  <section class="timeline-section">
+    <div class="timeline-wrap">
+      <div class="timeline-line"></div>
+
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/qin.html">秦朝 <span class="tl-years">221–207 BC</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/han.html">汉朝 <span class="tl-years">202 BC – 220 AD</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/jin.html">晋朝 <span class="tl-years">265–420</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/nanbeichao.html">南北朝 <span class="tl-years">420–589</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/sui.html">隋朝 <span class="tl-years">581–618</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/tang.html">唐朝 <span class="tl-years">618–907</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/song.html">宋朝 <span class="tl-years">960–1279</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/yuan.html">元朝 <span class="tl-years">1271–1368</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/ming.html">明朝 <span class="tl-years">1368–1644</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+      <div class="timeline-item fade-in">
+        <div class="tl-label"><a href="dynasties/qing.html">清朝 <span class="tl-years">1636–1912</span></a></div>
+        <div class="tl-dot"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 朝代网格 ===== -->
+  <section class="dynasty-grid-section">
+    <div class="dynasty-grid">
+      <a href="dynasties/qin.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-qin">秦</div>
+        <div class="card-body">
+          <div class="card-name">秦朝</div>
+          <div class="card-surname">嬴姓 · 赵氏</div>
+          <div class="card-years">公元前 221 – 前 207</div>
+          <div class="card-desc">中国历史上第一个大一统王朝，开创帝制时代。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/han.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-han">汉</div>
+        <div class="card-body">
+          <div class="card-name">汉朝</div>
+          <div class="card-surname">刘姓</div>
+          <div class="card-years">公元前 202 – 公元 220</div>
+          <div class="card-desc">四百年基业，奠定汉民族文化认同。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/jin.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-jin">晋</div>
+        <div class="card-body">
+          <div class="card-name">晋朝</div>
+          <div class="card-surname">司马氏</div>
+          <div class="card-years">公元 265 – 420</div>
+          <div class="card-desc">士族门阀政治的鼎盛时期。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/nanbeichao.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-nanbei">南·北</div>
+        <div class="card-body">
+          <div class="card-name">南北朝</div>
+          <div class="card-surname">多家族并立</div>
+          <div class="card-years">公元 420 – 589</div>
+          <div class="card-desc">南北对峙，多个皇室家族轮番登场。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/sui.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-sui">隋</div>
+        <div class="card-body">
+          <div class="card-name">隋朝</div>
+          <div class="card-surname">杨姓</div>
+          <div class="card-years">公元 581 – 618</div>
+          <div class="card-desc">短暂而辉煌，承南北朝启大唐。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/tang.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-tang">唐</div>
+        <div class="card-body">
+          <div class="card-name">唐朝</div>
+          <div class="card-surname">李姓</div>
+          <div class="card-years">公元 618 – 907</div>
+          <div class="card-desc">中国历史上最辉煌的王朝之一。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/song.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-song">宋</div>
+        <div class="card-body">
+          <div class="card-name">宋朝</div>
+          <div class="card-surname">赵姓</div>
+          <div class="card-years">公元 960 – 1279</div>
+          <div class="card-desc">文治极盛，经济文化空前繁荣。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/yuan.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-yuan">元</div>
+        <div class="card-body">
+          <div class="card-name">元朝</div>
+          <div class="card-surname">孛儿只斤氏</div>
+          <div class="card-years">公元 1271 – 1368</div>
+          <div class="card-desc">蒙古帝国入主中原，横跨欧亚。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/ming.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-ming">明</div>
+        <div class="card-body">
+          <div class="card-name">明朝</div>
+          <div class="card-surname">朱姓</div>
+          <div class="card-years">公元 1368 – 1644</div>
+          <div class="card-desc">汉族重建的最后一个大一统王朝。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+      <a href="dynasties/qing.html" class="dynasty-card fade-in">
+        <div class="card-visual cv-qing">清</div>
+        <div class="card-body">
+          <div class="card-name">清朝</div>
+          <div class="card-surname">爱新觉罗氏</div>
+          <div class="card-years">公元 1636 – 1912</div>
+          <div class="card-desc">中国最后一个封建王朝。</div>
+        </div>
+        <div class="card-footer">查看详情 →</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== 页脚 ===== -->
+  <footer class="footer">
+    <p>中国历代皇室家族 · 从秦到清</p>
+    <p style="margin-top: 8px; font-size: 0.8rem;">内容依据正史史料整理，仅供学习参考。</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
