@@ -1,0 +1,157 @@
+<template>
+  <div v-if="loading" class="loading">加载中...</div>
+  <div v-else-if="error" class="error">{{ error }}</div>
+  <template v-else-if="detail">
+    <nav class="page-nav">
+      <div class="nav-inner">
+        <router-link to="/" class="nav-home">← 首页</router-link>
+        <span style="flex:1"></span>
+        <div class="nav-adjacent">
+          <button class="btn" @click="scrollTo('profile')">基本档案</button>
+          <button class="btn" @click="scrollTo('origins')">家族渊源</button>
+          <button class="btn" @click="scrollTo('founding')">开国之路</button>
+          <button class="btn" @click="scrollTo('zenith')">鼎盛时期</button>
+          <button class="btn" @click="scrollTo('members')">著名成员</button>
+          <button class="btn" @click="scrollTo('rulers')">君主表</button>
+          <button class="btn" @click="scrollTo('children')">子嗣表</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-wrapper">
+      <aside class="page-sidebar">
+        <ul>
+          <li><a href="#profile" :class="{ active: activeSection === 'profile' }">基本档案</a></li>
+          <li><a href="#origins" :class="{ active: activeSection === 'origins' }">家族渊源</a></li>
+          <li><a href="#founding" :class="{ active: activeSection === 'founding' }">开国之路</a></li>
+          <li><a href="#zenith" :class="{ active: activeSection === 'zenith' }">鼎盛时期</a></li>
+          <li><a href="#members" :class="{ active: activeSection === 'members' }">著名皇室成员</a></li>
+          <li><a href="#tree" :class="{ active: activeSection === 'tree' }">家族关系谱</a></li>
+          <li><a href="#decline" :class="{ active: activeSection === 'decline' }">衰落与终结</a></li>
+          <li><a href="#rulers" :class="{ active: activeSection === 'rulers' }">历任君主表</a></li>
+          <li><a href="#children" :class="{ active: activeSection === 'children' }">皇帝子嗣</a></li>
+        </ul>
+      </aside>
+
+      <main class="page-content">
+        <section class="content-section" id="profile">
+          <h1>{{ detail.name }} · {{ detail.surname }}</h1>
+          <p class="dynasty-sub">{{ detail.period }} · 都城：{{ detail.capital }}</p>
+          <FactGrid :detail="detail" />
+        </section>
+
+        <section class="content-section" id="origins">
+          <h2>家族渊源</h2>
+          <p v-for="(p, i) in splitParagraphs(sections.origins)" :key="i">{{ p }}</p>
+        </section>
+
+        <section class="content-section" id="founding">
+          <h2>开国之路</h2>
+          <p v-for="(p, i) in splitParagraphs(sections.founding)" :key="i">{{ p }}</p>
+        </section>
+
+        <section class="content-section" id="zenith">
+          <h2>鼎盛时期</h2>
+          <p v-for="(p, i) in splitParagraphs(sections.zenith)" :key="i">{{ p }}</p>
+        </section>
+
+        <section class="content-section" id="members">
+          <h2>著名皇室成员</h2>
+          <MemberGrid :members="detail.members" />
+        </section>
+
+        <section class="content-section" id="tree">
+          <h2>家族关系谱</h2>
+          <FamilyTree :tree="treeData" />
+        </section>
+
+        <section class="content-section" id="decline">
+          <h2>衰落与终结</h2>
+          <p v-for="(p, i) in splitParagraphs(sections.decline)" :key="i">{{ p }}</p>
+        </section>
+
+        <section class="content-section" id="rulers">
+          <h2>历任君主表</h2>
+          <RulerTable :rulers="detail.rulers" />
+        </section>
+
+        <section class="content-section" id="children">
+          <h2>皇帝子嗣</h2>
+          <RulerChildren :rulers="detail.rulers" />
+        </section>
+      </main>
+    </div>
+  </template>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { getDynastyDetail } from '../api/dynasty'
+import type { DynastyDetail, DynastySections } from '../types'
+import FactGrid from './components/FactGrid.vue'
+import MemberGrid from './components/MemberGrid.vue'
+import RulerTable from './components/RulerTable.vue'
+import FamilyTree from './components/FamilyTree.vue'
+import RulerChildren from './components/RulerChildren.vue'
+
+const route = useRoute()
+const detail = ref<DynastyDetail | null>(null)
+const loading = ref(true)
+const error = ref('')
+const activeSection = ref('profile')
+let scrollCleanup: (() => void) | null = null
+
+const sections = computed<DynastySections>(() => {
+  try {
+    return detail.value?.description ? JSON.parse(detail.value.description) : {} as DynastySections
+  } catch { return {} as DynastySections }
+})
+
+const treeData = computed(() => {
+  try { return detail.value?.familyTree ? JSON.parse(detail.value.familyTree) : [] }
+  catch { return [] }
+})
+
+onMounted(async () => {
+  const id = Number(route.params.id)
+  try {
+    detail.value = await getDynastyDetail(id)
+    loading.value = false
+  } catch (e) {
+    error.value = '加载失败，请稍后重试'
+    loading.value = false
+    return
+  }
+  const handleScroll = () => {
+    const ids = ['profile', 'origins', 'founding', 'zenith', 'members', 'tree', 'decline', 'rulers', 'children']
+    for (const id of ids) {
+      const el = document.getElementById(id)
+      if (el && el.getBoundingClientRect().top <= 120) {
+        activeSection.value = id
+      }
+    }
+  }
+  window.addEventListener('scroll', handleScroll)
+  scrollCleanup = () => window.removeEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => { scrollCleanup?.() })
+
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+}
+
+function splitParagraphs(text: string): string[] {
+  if (!text) return []
+  return text.split(/(?<=[。！？])/).filter(p => p.trim().length > 0)
+}
+</script>
+
+<style scoped>
+.nav-inner { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 1400px; margin: 0 auto; }
+.nav-home { font-family: var(--font-title); font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+.nav-adjacent { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav-adjacent .btn { padding: 4px 10px; font-size: 0.8rem; }
+@media (max-width: 768px) { .nav-adjacent { display: none; } }
+</style>

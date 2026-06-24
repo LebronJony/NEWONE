@@ -1,0 +1,16 @@
+#!/bin/sh
+MAVEN_HOME="$HOME/.m2/wrapper/dists/apache-maven-3.9.6"
+if [ -f "$MAVEN_HOME/bin/mvn" ]; then
+  exec "$MAVEN_HOME/bin/mvn" "$@"
+fi
+# Try to find mvn
+MVN=$(command -v mvn 2>/dev/null)
+if [ -n "$MVN" ]; then
+  exec "$MVN" "$@"
+fi
+# If no mvn found, try installing via brew
+if command -v brew >/dev/null 2>&1; then
+  brew install maven >/dev/null 2>&1 && exec mvn "$@"
+fi
+echo "Maven not found. Please install Maven: brew install maven"
+exit 1
