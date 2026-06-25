@@ -36,14 +36,3 @@ CREATE TABLE IF NOT EXISTS royal_member (
     role VARCHAR(20),
     description TEXT
 );
-
-CREATE TABLE IF NOT EXISTS ruler_child (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    ruler_id BIGINT NOT NULL,
-    name VARCHAR(100),
-    title VARCHAR(100),
-    mother VARCHAR(100),
-    deeds TEXT,
-    fate TEXT,
-    sort_order INT
-);

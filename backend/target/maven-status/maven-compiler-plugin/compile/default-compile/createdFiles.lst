@@ -1,6 +1,4 @@
-com/example/history/entity/Dynasty.class
 com/example/history/controller/RulerController.class
-com/example/history/dto/DynastyDetailDTO.class
 com/example/history/controller/AdminController.class
 com/example/history/controller/DynastyController.class
 com/example/history/controller/MemberController.class
@@ -8,12 +6,14 @@ com/example/history/entity/RulerChild.class
 com/example/history/config/CorsConfig.class
 com/example/history/repository/RulerRepository.class
 com/example/history/config/WebConfig.class
+com/example/history/dto/DynastyListDTO.class
+com/example/history/config/DataLoader.class
+com/example/history/entity/RoyalMember.class
+com/example/history/entity/Dynasty.class
+com/example/history/dto/DynastyDetailDTO.class
 com/example/history/repository/RoyalMemberRepository.class
 com/example/history/repository/DynastyRepository.class
 com/example/history/entity/Ruler.class
-com/example/history/dto/DynastyListDTO.class
 com/example/history/service/DynastyService.class
-com/example/history/config/DataLoader.class
 com/example/history/repository/RulerChildRepository.class
 com/example/history/HistoryApplication.class
-com/example/history/entity/RoyalMember.class

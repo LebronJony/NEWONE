@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 
-@Component
+// @Component (disabled - schema.sql handles init)
 public class DataLoader {
 
     private final DataSource dataSource;
