@@ -103,6 +103,7 @@ import RulerTable from './components/RulerTable.vue'
 import FamilyTree from './components/FamilyTree.vue'
 import RulerChildren from './components/RulerChildren.vue'
 import RulerEvents from './components/RulerEvents.vue'
+import { getHistoricalFigures } from '../data/historical_data'
 
 const route = useRoute()
 const detail = ref<DynastyDetail | null>(null)
@@ -121,6 +122,11 @@ onMounted(async () => {
   const id = Number(route.params.id)
   try {
     detail.value = await getDynastyDetail(id)
+    // 合并本地历史人物数据（非帝王）
+    const localFigures = getHistoricalFigures(id)
+    if (localFigures.length > 0) {
+      detail.value.members = [...(detail.value.members || []), ...localFigures.map((f, i) => ({ ...f, id: -(i + 1) }))]
+    }
     loading.value = false
   } catch (e) {
     error.value = '加载失败，请稍后重试'
