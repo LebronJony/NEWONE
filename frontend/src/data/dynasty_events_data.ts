@@ -1,126 +1,15 @@
-<template>
-  <div v-if="loading" class="loading">加载中...</div>
-  <div v-else-if="error" class="error">{{ error }}</div>
-  <template v-else-if="detail">
-    <nav class="page-nav">
-      <div class="nav-inner">
-        <router-link to="/" class="nav-home">← 首页</router-link>
-        <span style="flex:1"></span>
-        <div class="nav-adjacent">
-          <button class="btn" @click="scrollTo('profile')">基本档案</button>
-          <button class="btn" @click="scrollTo('origins')">家族渊源</button>
-          <button class="btn" @click="scrollTo('founding')">开国之路</button>
-          <button class="btn" @click="scrollTo('zenith')">鼎盛时期</button>
-          <button class="btn" @click="scrollTo('members')">著名成员</button>
-          <button class="btn" @click="scrollTo('rulers')">君主表</button>
-          <button class="btn" @click="scrollTo('children')">子嗣表</button>
-          <button class="btn" @click="scrollTo('events')">著名事件</button>
-        </div>
-      </div>
-    </nav>
+// 各朝代重大历史事件（按朝代而非帝王分类）
 
-    <div class="page-wrapper">
-      <aside class="page-sidebar">
-        <ul>
-          <li><a href="#profile" :class="{ active: activeSection === 'profile' }">基本档案</a></li>
-          <li><a href="#origins" :class="{ active: activeSection === 'origins' }">家族渊源</a></li>
-          <li><a href="#founding" :class="{ active: activeSection === 'founding' }">开国之路</a></li>
-          <li><a href="#zenith" :class="{ active: activeSection === 'zenith' }">鼎盛时期</a></li>
-          <li><a href="#members" :class="{ active: activeSection === 'members' }">著名历史人物</a></li>
-          <li><a href="#tree" :class="{ active: activeSection === 'tree' }">家族关系谱</a></li>
-          <li><a href="#decline" :class="{ active: activeSection === 'decline' }">衰落与终结</a></li>
-          <li><a href="#rulers" :class="{ active: activeSection === 'rulers' }">历任君主表</a></li>
-          <li><a href="#children" :class="{ active: activeSection === 'children' }">皇帝子嗣</a></li>
-          <li><a href="#events" :class="{ active: activeSection === 'events' }">著名事件</a></li>
-        </ul>
-      </aside>
+export interface DynastyEvent {
+  name: string
+  year: string
+  description: string
+  significance: string
+  era?: string    // 时代背景/关联人物
+  type?: string   // 军事/政治/文化/改革等
+}
 
-      <main class="page-content">
-        <section class="content-section" id="profile">
-          <h1>{{ detail.name }} · {{ detail.surname }}</h1>
-          <p class="dynasty-sub">{{ detail.period }} · 都城：{{ detail.capital }}</p>
-          <FactGrid :detail="detail" />
-        </section>
-
-        <section class="content-section" id="origins">
-          <h2>家族渊源</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.origins)" :key="i">{{ p }}</p>
-        </section>
-
-        <section class="content-section" id="founding">
-          <h2>开国之路</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.founding)" :key="i">{{ p }}</p>
-        </section>
-
-        <section class="content-section" id="zenith">
-          <h2>鼎盛时期</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.zenith)" :key="i">{{ p }}</p>
-        </section>
-
-        <section class="content-section" id="members">
-          <h2>著名历史人物</h2>
-          <MemberGrid :members="detail.members" />
-        </section>
-
-        <section class="content-section" id="tree">
-          <h2>家族关系谱</h2>
-          <FamilyTree :rulers="detail.rulers" />
-        </section>
-
-        <section class="content-section" id="decline">
-          <h2>衰落与终结</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.decline)" :key="i">{{ p }}</p>
-        </section>
-
-        <section class="content-section" id="rulers">
-          <h2>历任君主表</h2>
-          <RulerTable :rulers="detail.rulers" />
-        </section>
-
-        <section class="content-section" id="children">
-          <h2>皇帝子嗣</h2>
-          <RulerChildren :rulers="detail.rulers" />
-        </section>
-
-        <section class="content-section" id="events">
-          <h2>著名历史事件</h2>
-          <p style="margin-bottom:16px;color:var(--color-muted);">与各位置位君主相关的重大历史事件</p>
-          <div class="dynasty-events">
-          <div v-for="(ev, idx) in dynastyEvents" :key="idx" class="de-card">
-            <div class="de-hd">
-              <span class="de-name">{{ ev.name }}</span>
-              <span class="de-year">{{ ev.year }}</span>
-              <span v-if="ev.era" class="de-era">{{ ev.era }}</span>
-              <span v-if="ev.type" class="de-type" :style="{background:typeColor(ev.type)}">{{ ev.type }}</span>
-            </div>
-            <p class="de-desc">{{ ev.description }}</p>
-            <div class="de-sig">{{ ev.significance }}</div>
-          </div>
-        </div>
-        <h3 style="margin:24px 0 8px;font-size:1rem;color:var(--color-muted);">历代帝王大事记</h3>
-        <RulerEvents :rulers="detail.rulers" />
-        </section>
-      </main>
-    </div>
-  </template>
-</template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { getDynastyDetail } from '../api/dynasty'
-import type { DynastyDetail, DynastySections } from '../types'
-import FactGrid from './components/FactGrid.vue'
-import MemberGrid from './components/MemberGrid.vue'
-import RulerTable from './components/RulerTable.vue'
-import FamilyTree from './components/FamilyTree.vue'
-import RulerChildren from './components/RulerChildren.vue'
-import RulerEvents from './components/RulerEvents.vue'
-import { getHistoricalFigures } from '../data/historical_data'
-
-const route = useRoute()
-
-const DYNASTY_EVENTS: Record<number, DynastyEvent[]> = {
+export const DYNASTY_EVENTS: Record<number, DynastyEvent[]> = {
   1: [  // 秦
     { name:'商鞅变法', year:'前356-前338', description:'商鞅在秦孝公支持下推行变法，包括废井田、开阡陌、奖励军功、推行县制、统一度量衡等。使秦国从一个西陲弱国迅速崛起为战国第一强国。', significance:'商鞅变法是中国历史上最彻底的改革之一，为秦国统一六国奠定了制度基础。其法治思想对后世产生了深远影响。', era:'秦孝公·商鞅', type:'改革' },
     { name:'秦灭六国', year:'前230-前221', description:'秦王嬴政先后灭韩、赵、魏、楚、燕、齐六国，结束了长达五百余年的诸侯割据局面，建立了中国历史上第一个大一统中央集权王朝。', significance:'结束了春秋战国长期分裂的局面，开创了中国两千多年的帝制时代。"皇帝"称号自此成为最高统治者的称谓。', era:'秦始皇', type:'军事' },
@@ -219,76 +108,7 @@ const DYNASTY_EVENTS: Record<number, DynastyEvent[]> = {
     { name:'辛亥革命', year:'1911', description:'武昌起义爆发，各省纷纷响应宣布独立。清朝统治土崩瓦解。孙中山被推举为临时大总统。', significance:'结束了两千多年的封建帝制。中华民国成立，中国进入新的历史时期。', era:'孙中山·袁世凯', type:'政治' },
   ],
 };
-const detail = ref<DynastyDetail | null>(null)
-const dynastyEvents = computed(() => detail.value ? DYNASTY_EVENTS[detail.value.id] || [] : [])
-const loading = ref(true)
-const error = ref('')
-const activeSection = ref('profile')
-let scrollCleanup: (() => void) | null = null
 
-const sections = computed<DynastySections>(() => {
-  try {
-    return detail.value?.description ? JSON.parse(detail.value.description) : {} as DynastySections
-  } catch { return {} as DynastySections }
-})
-
-onMounted(async () => {
-  const id = Number(route.params.id)
-  try {
-    detail.value = await getDynastyDetail(id)
-    // 合并本地历史人物数据（非帝王）
-    const localFigures = getHistoricalFigures(id)
-    if (localFigures.length > 0) {
-      detail.value.members = [...(detail.value.members || []), ...localFigures.map((f, i) => ({ ...f, id: -(i + 1) }))]
-    }
-    loading.value = false
-  } catch (e) {
-    error.value = '加载失败，请稍后重试'
-    loading.value = false
-    return
-  }
-  const handleScroll = () => {
-    const ids = ['profile', 'origins', 'founding', 'zenith', 'members', 'tree', 'decline', 'rulers', 'children', 'events']
-    for (const id of ids) {
-      const el = document.getElementById(id)
-      if (el && el.getBoundingClientRect().top <= 120) {
-        activeSection.value = id
-      }
-    }
-  }
-  window.addEventListener('scroll', handleScroll)
-  scrollCleanup = () => window.removeEventListener('scroll', handleScroll)
-})
-
-onUnmounted(() => { scrollCleanup?.() })
-
-function scrollTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+export function getDynastyEvents(dynastyId: number): DynastyEvent[] {
+  return DYNASTY_EVENTS[dynastyId] || []
 }
-
-function typeColor(type: string): string {
-  const map: Record<string, string> = {
-    '军事': '#8b1a1a',
-    '政治': '#2c3e50',
-    '外交': '#227093',
-    '文化': '#6b5b95',
-    '经济': '#c0392b',
-    '改革': '#2d6a4f',
-    '工程': '#b8860b',
-    '科技': '#4a6741',
-  };
-  return map[type] || '#888';
-}
-function splitParagraphs(text: string): string[] {
-  if (!text) return []
-  return text.split(/(?<=[。！？])/).filter(p => p.trim().length > 0)
-}
-</script>
-
-<style scoped>
-.nav-inner { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 1400px; margin: 0 auto; }
-.nav-home { font-family: var(--font-title); font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
-.nav-adjacent { display: flex; gap: 4px; flex-wrap: wrap; }
-.nav-adjacent .btn { padding: 4px 10px; font-size: 0.8rem; }
-@media (max-width: 768px) { .nav-adjacent { display: none; } }
-</style>

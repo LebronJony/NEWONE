@@ -1,15 +1,21 @@
 #!/bin/bash
-# ========================================
+# ============================================================
 # 中国历代皇室家族 — 一键启动脚本
-# 自动检测前后端运行状态，异常时自动重启
-# ========================================
+# 功能: 关闭旧终端窗口、健康检查、一键重启
+# 访问地址:
+#   http://localhost:5174/   (前端开发服务器，推荐)
+#   http://localhost:8088/   (后端直连，SPA + API)
+# ============================================================
+
+set -e
 
 BACKEND_PORT=8088
 FRONTEND_PORT=5174
 BACKEND_DIR="/Users/gong/Documents/NEWONE/backend"
 FRONTEND_DIR="/Users/gong/Documents/NEWONE/frontend"
-BACKEND_API="http://localhost:8088/api/dynasties"
+BACKEND_HEALTH="http://localhost:8088/api/dynasties"
 FRONTEND_URL="http://localhost:5174"
+
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
@@ -17,130 +23,213 @@ warn() { echo -e "  ${YELLOW}⚠${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; }
 info() { echo -e "  ${CYAN}→${NC} $1"; }
 
+# ---------- 标题 ----------
 echo ""
-echo "  ╔══════════════════════════════════════╗"
-echo "  ║    中国历代皇室家族 — 一键启动      ║"
-echo "  ╚══════════════════════════════════════╝"
+printf "\033[36m  ╔══════════════════════════════════════════════╗\033[0m\n"
+printf "\033[36m  ║        中国历代皇室家族 — 一键启动          ║\033[0m\n"
+printf "\033[36m  ╚══════════════════════════════════════════════╝\033[0m\n"
 echo ""
 
-# ========== 检测后端 ==========
-echo "  ── 后端检测 ──"
+# ========== 1. 关闭旧终端窗口 ==========
+echo "  ── 关闭旧终端窗口 ──"
+osascript -e '
+tell application "Terminal"
+  set allWindows to every window
+  set keepIds to {}
+  try
+    set keepIds to id of front window
+  end try
+  repeat with w in allWindows
+    set wid to id of w
+    set found to false
+    repeat with k in keepIds
+      if wid = k then set found to true
+    end repeat
+    if not found then
+      try
+        set wTab to the first tab of w
+        set wTitle to the custom title of wTab as string
+        if wTitle contains "spring-boot" or wTitle contains "serve_frontend" or wTitle contains "mvn" or wTitle contains "node" then
+          close w
+        end if
+      end try
+    end if
+  end repeat
+end tell
+' 2>/dev/null && ok "旧终端窗口已关闭" || info "无需关闭旧窗口"
+
+# ========== 2. 清除缓存 ==========
+echo ""
+echo "  ── 清除缓存 ──"
+if [ -d "$FRONTEND_DIR/node_modules/.vite" ]; then
+  rm -rf "$FRONTEND_DIR/node_modules/.vite" && ok "Vite 缓存已清除" || info "清除 Vite 缓存失败"
+else
+  info "无需清除 Vite 缓存"
+fi
+if [ -d "$FRONTEND_DIR/dist" ]; then
+  rm -rf "$FRONTEND_DIR/dist" && ok "构建缓存已清除" || info "清除构建缓存失败"
+else
+  info "无需清除构建缓存"
+fi
+
+# ========== 3. 后端检测启动 ==========
+echo ""
+echo "  ── 后端 (Spring Boot, 端口 $BACKEND_PORT) ──"
 BACKEND_OK=false
 if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-  HTTP_CODE=$(curl -s -o /tmp/_be_check.json -w "%{http_code}" "$BACKEND_API" 2>/dev/null)
+  HTTP_CODE=$(curl -s -o /tmp/_be_check.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
   if [ "$HTTP_CODE" = "200" ]; then
-    # Verify JSON is valid and has correct encoding
-    FIRST_CHAR=$(head -c 3 /tmp/_be_check.json 2>/dev/null)
-    if [ "$FIRST_CHAR" = "[{" ]; then
-      ok "后端运行正常 (端口 $BACKEND_PORT)"
+    H_COUNT=$(head -c 3 /tmp/_be_check.json 2>/dev/null)
+    if [ "$H_COUNT" = "[{" ]; then
+      ok "运行正常"
       BACKEND_OK=true
     else
-      warn "后端 API 返回异常数据，准备重启"
+      warn "API 返回异常 — 重启"
     fi
   else
-    warn "后端 HTTP 状态码: $HTTP_CODE，准备重启"
+    warn "HTTP $HTTP_CODE — 重启"
   fi
 else
-  warn "后端端口 $BACKEND_PORT 未监听"
+  warn "未运行 — 启动中..."
 fi
 
 if [ "$BACKEND_OK" != "true" ]; then
-  info "正在关闭旧的后端进程..."
-  lsof -ti :$BACKEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null
-  sleep 2
-  info "正在启动后端 (新终端窗口)..."
-  osascript -e "tell application \"Terminal\" to do script \"cd $BACKEND_DIR && mvn spring-boot:run\"" 2>/dev/null
-  info "等待后端就绪..."
+  lsof -ti :$BACKEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null && ok "旧进程已清理" || info "无旧进程"
+  sleep 1
+  info "启动后端 (新终端窗口)..."
+  osascript -e "tell application \"Terminal\" to do script \"cd $BACKEND_DIR && ./mvnw spring-boot:run -DskipTests\"" 2>/dev/null
   BE_READY=false
-  for i in $(seq 1 36); do
+  for i in $(seq 1 30); do
     sleep 2
     if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_API" 2>/dev/null)
+      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
       if [ "$CODE" = "200" ]; then
-        ok "后端就绪 ($((i*2))秒)"
+        ok "就绪 ($((i*2))秒)"
         BE_READY=true
         break
       fi
     fi
-    [ $((i % 6)) -eq 0 ] && info "等待中... ($((i*2))秒)"
+    [ $((i % 5)) -eq 0 ] && info "等待中... ($((i*2))秒)"
   done
   if [ "$BE_READY" != "true" ]; then
-    fail "后端启动超时，请检查 Maven 编译是否正常"
+    fail "后端启动超时（${BACKEND_DIR}/target 目录可能存在编译错误）"
   fi
 fi
+
+# ========== 4. 前端构建 + 部署到后端 ==========
 echo ""
+echo "  ── 前端 (Vue 3, 端口 $FRONTEND_PORT) ──"
+info "构建前端..."
+cd "$FRONTEND_DIR" && npx vite build 2>/dev/null && ok "构建完成" || { fail "前端构建失败，请检查代码错误"; exit 1; }
+info "部署到后端静态目录..."
+rm -rf "$BACKEND_DIR/src/main/resources/static/*" 2>/dev/null
+cp -r "$FRONTEND_DIR/dist/"* "$BACKEND_DIR/src/main/resources/static/" 2>/dev/null && ok "已部署到后端静态目录" || info "部署失败（不影响前端独立运行）"
 
-# ========== 检测前端 ==========
-echo "  ── 前端检测 ──"
-
-# Kill the old broken Vite server on 5173 if still running
-if lsof -i :5173 -P -n 2>/dev/null | grep -q LISTEN; then
-  warn "发现旧的前端服务 (5173端口)，正在关闭..."
-  lsof -ti :5173 2>/dev/null | xargs kill -9 2>/dev/null
-  sleep 1
-fi
-
+# ========== 5. 前端检测启动 ==========
 FRONTEND_OK=false
 if lsof -i :$FRONTEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
   HTTP_CODE=$(curl -s -o /tmp/_fe_check.html -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
   if [ "$HTTP_CODE" = "200" ]; then
     if grep -q "charset=UTF-8" /tmp/_fe_check.html 2>/dev/null && grep -q "中国历代皇室家族" /tmp/_fe_check.html 2>/dev/null; then
-      ok "前端运行正常 (端口 $FRONTEND_PORT)"
+      ok "运行正常"
       FRONTEND_OK=true
     else
-      warn "前端页面内容异常，准备重启"
+      warn "页面内容异常 — 重启"
     fi
   else
-    warn "前端 HTTP 状态码: $HTTP_CODE，准备重启"
+    warn "HTTP $HTTP_CODE — 重启"
   fi
 else
-  warn "前端端口 $FRONTEND_PORT 未监听"
+  warn "未运行 — 启动中..."
 fi
 
 if [ "$FRONTEND_OK" != "true" ]; then
-  info "正在关闭旧的前端进程..."
-  lsof -ti :$FRONTEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null
-  sleep 2
-  info "正在启动前端 (新终端窗口)..."
-  osascript -e "tell application \"Terminal\" to do script \"cd $FRONTEND_DIR && npm run dev -- --port $FRONTEND_PORT\"" 2>/dev/null
-  info "等待前端就绪..."
+  lsof -ti :$FRONTEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null && ok "旧进程已清理" || info "无旧进程"
+  sleep 1
+  info "启动前端 (新终端窗口)..."
+  osascript -e "tell application \"Terminal\" to do script \"cd $FRONTEND_DIR && node serve_frontend.cjs\"" 2>/dev/null
   FE_READY=false
-  for i in $(seq 1 24); do
+  for i in $(seq 1 20); do
     sleep 2
     if lsof -i :$FRONTEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
       CODE=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
       if [ "$CODE" = "200" ]; then
-        ok "前端就绪 ($((i*2))秒)"
+        ok "就绪 ($((i*2))秒)"
         FE_READY=true
         break
       fi
     fi
-    [ $((i % 6)) -eq 0 ] && info "等待中... ($((i*2))秒)"
+    [ $((i % 5)) -eq 0 ] && info "等待中... ($((i*2))秒)"
   done
   if [ "$FE_READY" != "true" ]; then
-    fail "前端启动超时，请检查 npm install 是否已完成"
+    fail "前端启动超时"
   fi
 fi
-echo ""
 
-# ========== 结果 ==========
-echo "  ── 运行状态 ──"
-if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-  ok "后端 http://localhost:$BACKEND_PORT"
+# ========== 6. 最终健康检查 ==========
+echo ""
+echo "  ── 健康检查 ──"
+ALL_OK=true
+# 后端检查
+BE_CODE=$(curl -s -o /tmp/_be_final.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
+BE_JSON=$(head -c 3 /tmp/_be_final.json 2>/dev/null)
+if [ "$BE_CODE" = "200" ] && [ "$BE_JSON" = "[{" ]; then
+  D_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_be_final.json')); print(len(d))" 2>/dev/null || echo "0")
+  ok "后端 API: ${D_COUNT:-?} 个朝代获取成功"
 else
-  fail "后端未运行"
-fi
-if lsof -i :$FRONTEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-  ok "前端 http://localhost:$FRONTEND_PORT"
-else
-  fail "前端未运行"
+  fail "后端 API 异常 (HTTP $BE_CODE)"
+  ALL_OK=false
 fi
 
+# 前端检查
+FE_CODE=$(curl -s -o /tmp/_fe_final.html -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
+if [ "$FE_CODE" = "200" ]; then
+  if grep -q "中国历代皇室家族" /tmp/_fe_final.html 2>/dev/null; then
+    ok "前端页面: 正常加载"
+  else
+    warn "前端页面不完整"
+    ALL_OK=false
+  fi
+else
+  fail "前端 HTTP $FE_CODE"
+  ALL_OK=false
+fi
+
+# SPA 路由检查
+SPA_CODE=$(curl -s -o /tmp/_spa_check.html -w "%{http_code}" "$FRONTEND_URL/dynasty/2" 2>/dev/null)
+if [ "$SPA_CODE" = "200" ]; then
+  ok "SPA 路由: /dynasty/2 ➔ 200"
+else
+  fail "SPA 路由异常 (HTTP $SPA_CODE)"
+  ALL_OK=false
+fi
+
+# API 通过前端代理检查
+PROXY_CODE=$(curl -s -o /tmp/_proxy_check.json -w "%{http_code}" "$FRONTEND_URL/api/dynasties" 2>/dev/null)
+P_JSON=$(head -c 3 /tmp/_proxy_check.json 2>/dev/null)
+if [ "$PROXY_CODE" = "200" ] && [ "$P_JSON" = "[{" ]; then
+  ok "前端代理: API 透传正常"
+else
+  fail "前端代理异常 (HTTP $PROXY_CODE)"
+  ALL_OK=false
+fi
+
+# ========== 7. 结果输出 ==========
 echo ""
-info "正在打开浏览器..."
-open "http://localhost:$FRONTEND_PORT" 2>/dev/null || true
+if [ "$ALL_OK" = "true" ]; then
+  echo -e "  ${GREEN}╔══════════════════════════════════════════╗${NC}"
+  echo -e "  ${GREEN}║          ✓  所有服务运行正常           ║${NC}"
+  echo -e "  ${GREEN}╚══════════════════════════════════════════╝${NC}"
+else
+  echo -e "  ${YELLOW}╔══════════════════════════════════════════╗${NC}"
+  echo -e "  ${YELLOW}║          ⚠  部分服务异常               ║${NC}"
+  echo -e "  ${YELLOW}╚══════════════════════════════════════════╝${NC}"
+fi
 echo ""
-echo "  ╔══════════════════════════════════════╗"
-echo "  ║             启动完成                 ║"
-echo "  ╚══════════════════════════════════════╝"
+echo "  ┌──────────────────────────────────────┐"
+echo "  │  访问地址                              │"
+echo "  │                                        │"
+echo -e "  │  ${CYAN}http://localhost:$FRONTEND_PORT/${NC}    前端服务器 (推荐) │"
+echo -e "  │  ${CYAN}http://localhost:$BACKEND_PORT/${NC}     后端直连       │"
+echo "  └──────────────────────────────────────┘"
 echo ""
