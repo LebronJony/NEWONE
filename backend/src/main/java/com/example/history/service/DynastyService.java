@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -45,12 +46,26 @@ public class DynastyService {
         Dynasty d = dynastyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dynasty not found: " + id));
         List<Ruler> rulers = rulerRepository.findByDynastyIdOrderByIdAsc(id);
+        rulers.sort((a, b) -> Integer.compare(parseYear(a.getReignStart()), parseYear(b.getReignStart())));
         List<RoyalMember> members = memberRepository.findByDynastyIdOrderByIdAsc(id);
         return DynastyDetailDTO.from(d, rulers, members);
     }
 
     public List<Ruler> getRulers(Long dynastyId) {
-        return rulerRepository.findByDynastyIdOrderByIdAsc(dynastyId);
+        List<Ruler> rulers = rulerRepository.findByDynastyIdOrderByIdAsc(dynastyId);
+        rulers.sort((a, b) -> Integer.compare(parseYear(a.getReignStart()), parseYear(b.getReignStart())));
+        return rulers;
+    }
+
+    private int parseYear(String s) {
+        if (s == null || s.isEmpty()) return 0;
+        try {
+            String clean = s.replace("前", "").replaceAll("[^0-9]", "");
+            int val = Integer.parseInt(clean);
+            return s.contains("前") ? -val : val;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     public List<RoyalMember> getMembers(Long dynastyId) {

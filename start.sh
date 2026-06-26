@@ -30,9 +30,44 @@ printf "\033[36m  ║        中国历代皇室家族 — 一键启动          
 printf "\033[36m  ╚══════════════════════════════════════════════╝\033[0m\n"
 echo ""
 
+# ========== 解析参数 ==========
+FORCE_RESTART=false
+if [ "${1:-}" = "restart" ]; then
+  FORCE_RESTART=true
+  echo "  ⚡ 强制重启模式 — 清理所有服务..."
+  echo ""
+
+  # 强制杀掉所有相关进程
+  pkill -f "mvnw.*spring-boot"  || true
+  pkill -f "HistoryApplication"  || true
+  pkill -f "spring-boot"  || true
+  pkill -f "serve_frontend.cjs"  || true
+  pkill -f "node.*serve_frontend"  || true
+  lsof -ti :$BACKEND_PORT -P -n  | xargs kill -9  || true
+  lsof -ti :$FRONTEND_PORT -P -n  | xargs kill -9  || true
+  sleep 2
+  ok "所有相关进程已终止"
+
+  # 强制关闭所有 Terminal 窗口
+  osascript -e 'tell application "Terminal" to close (every window whose frontmost is false)'  || true
+  ok "所有 Terminal 窗口已关闭"
+
+  # 强制清除所有缓存
+  if [ -d "$FRONTEND_DIR/node_modules/.vite" ]; then
+    rm -rf "$FRONTEND_DIR/node_modules/.vite"
+  fi
+  if [ -d "$FRONTEND_DIR/dist" ]; then
+    rm -rf "$FRONTEND_DIR/dist"
+  fi
+  ok "缓存已完全清除"
+  echo ""
+  echo "  正在重新启动所有服务..."
+  echo ""
+fi
+
 # ========== 1. 关闭旧终端窗口 ==========
 echo "  ── 关闭旧终端窗口 ──"
-osascript -e 'tell application "Terminal" to close (every window whose frontmost is false)' 2>/dev/null && ok "旧终端窗口已关闭" || info "无需关闭旧窗口"
+osascript -e 'tell application "Terminal" to close (every window whose frontmost is false)'  && ok "旧终端窗口已关闭" || info "无需关闭旧窗口"
 
 # ========== 2. 清除缓存 ==========
 echo ""
@@ -52,10 +87,10 @@ fi
 echo ""
 echo "  ── 后端 (Spring Boot, 端口 $BACKEND_PORT) ──"
 BACKEND_OK=false
-if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-  HTTP_CODE=$(curl -s -o /tmp/_be_check.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
+if lsof -i :$BACKEND_PORT -P -n  | grep -q LISTEN; then
+  HTTP_CODE=$(curl -s -o /tmp/_be_check.json -w "%{http_code}" "$BACKEND_HEALTH" )
   if [ "$HTTP_CODE" = "200" ]; then
-    H_COUNT=$(head -c 2 /tmp/_be_check.json 2>/dev/null)
+    H_COUNT=$(head -c 2 /tmp/_be_check.json )
     if [ "$H_COUNT" = "[{" ]; then
       ok "运行正常"
       BACKEND_OK=true
@@ -70,15 +105,15 @@ else
 fi
 
 if [ "$BACKEND_OK" != "true" ]; then
-  lsof -ti :$BACKEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null && ok "旧进程已清理" || info "无旧进程"
+  lsof -ti :$BACKEND_PORT  | xargs kill -9  && ok "旧进程已清理" || info "无旧进程"
   sleep 1
   info "启动后端 (新终端窗口)..."
-  osascript -e "tell application \"Terminal\" to do script \"cd $BACKEND_DIR && ./mvnw spring-boot:run -DskipTests\"" 2>/dev/null
+  osascript -e "tell application \"Terminal\" to do script \"cd $BACKEND_DIR && ./mvnw spring-boot:run -DskipTests\"" 
   BE_READY=false
   for i in $(seq 1 30); do
     sleep 2
-    if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
+    if lsof -i :$BACKEND_PORT -P -n  | grep -q LISTEN; then
+      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_HEALTH" )
       if [ "$CODE" = "200" ]; then
         ok "就绪 ($((i*2))秒)"
         BE_READY=true
@@ -96,17 +131,17 @@ fi
 echo ""
 echo "  ── 前端 (Vue 3, 端口 $FRONTEND_PORT) ──"
 info "构建前端..."
-cd "$FRONTEND_DIR" && npx vite build 2>/dev/null && ok "构建完成" || { fail "前端构建失败，请检查代码错误"; exit 1; }
+cd "$FRONTEND_DIR" && npx vite build  && ok "构建完成" || { fail "前端构建失败，请检查代码错误"; exit 1; }
 info "部署到后端静态目录..."
-rm -rf "$BACKEND_DIR/src/main/resources/static/*" 2>/dev/null
-cp -r "$FRONTEND_DIR/dist/"* "$BACKEND_DIR/src/main/resources/static/" 2>/dev/null && ok "已部署到后端静态目录" || info "部署失败（不影响前端独立运行）"
+rm -rf "$BACKEND_DIR/src/main/resources/static/*" 
+cp -r "$FRONTEND_DIR/dist/"* "$BACKEND_DIR/src/main/resources/static/"  && ok "已部署到后端静态目录" || info "部署失败（不影响前端独立运行）"
 
 # ========== 5. 前端检测启动 ==========
 FRONTEND_OK=false
-if lsof -i :$FRONTEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-  HTTP_CODE=$(curl -s -o /tmp/_fe_check.html -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
+if lsof -i :$FRONTEND_PORT -P -n  | grep -q LISTEN; then
+  HTTP_CODE=$(curl -s -o /tmp/_fe_check.html -w "%{http_code}" "$FRONTEND_URL" )
   if [ "$HTTP_CODE" = "200" ]; then
-    if grep -q "charset=UTF-8" /tmp/_fe_check.html 2>/dev/null && grep -q "中国历代皇室家族" /tmp/_fe_check.html 2>/dev/null; then
+    if grep -q "charset=UTF-8" /tmp/_fe_check.html  && grep -q "中国历代皇室家族" /tmp/_fe_check.html ; then
       ok "运行正常"
       FRONTEND_OK=true
     else
@@ -120,15 +155,15 @@ else
 fi
 
 if [ "$FRONTEND_OK" != "true" ]; then
-  lsof -ti :$FRONTEND_PORT 2>/dev/null | xargs kill -9 2>/dev/null && ok "旧进程已清理" || info "无旧进程"
+  lsof -ti :$FRONTEND_PORT  | xargs kill -9  && ok "旧进程已清理" || info "无旧进程"
   sleep 1
   info "启动前端 (新终端窗口)..."
-  osascript -e "tell application \"Terminal\" to do script \"cd $FRONTEND_DIR && node serve_frontend.cjs\"" 2>/dev/null
+  osascript -e "tell application \"Terminal\" to do script \"cd $FRONTEND_DIR && node serve_frontend.cjs\"" 
   FE_READY=false
   for i in $(seq 1 20); do
     sleep 2
-    if lsof -i :$FRONTEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
-      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
+    if lsof -i :$FRONTEND_PORT -P -n  | grep -q LISTEN; then
+      CODE=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" )
       if [ "$CODE" = "200" ]; then
         ok "就绪 ($((i*2))秒)"
         FE_READY=true
@@ -147,10 +182,10 @@ echo ""
 echo "  ── 健康检查 ──"
 ALL_OK=true
 # 后端检查
-BE_CODE=$(curl -s -o /tmp/_be_final.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
-BE_JSON=$(head -c 2 /tmp/_be_final.json 2>/dev/null)
+BE_CODE=$(curl -s -o /tmp/_be_final.json -w "%{http_code}" "$BACKEND_HEALTH" )
+BE_JSON=$(head -c 2 /tmp/_be_final.json )
 if [ "$BE_CODE" = "200" ] && [ "$BE_JSON" = "[{" ]; then
-  D_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_be_final.json')); print(len(d))" 2>/dev/null || echo "0")
+  D_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_be_final.json')); print(len(d))"  || echo "0")
   ok "后端 API: ${D_COUNT:-?} 个朝代获取成功"
 else
   fail "后端 API 异常 (HTTP $BE_CODE)"
@@ -158,9 +193,9 @@ else
 fi
 
 # 前端检查
-FE_CODE=$(curl -s -o /tmp/_fe_final.html -w "%{http_code}" "$FRONTEND_URL" 2>/dev/null)
+FE_CODE=$(curl -s -o /tmp/_fe_final.html -w "%{http_code}" "$FRONTEND_URL" )
 if [ "$FE_CODE" = "200" ]; then
-  if grep -q "中国历代皇室家族" /tmp/_fe_final.html 2>/dev/null; then
+  if grep -q "中国历代皇室家族" /tmp/_fe_final.html ; then
     ok "前端页面: 正常加载"
   else
     warn "前端页面不完整"
@@ -172,7 +207,7 @@ else
 fi
 
 # SPA 路由检查
-SPA_CODE=$(curl -s -o /tmp/_spa_check.html -w "%{http_code}" "$FRONTEND_URL/dynasty/2" 2>/dev/null)
+SPA_CODE=$(curl -s -o /tmp/_spa_check.html -w "%{http_code}" "$FRONTEND_URL/dynasty/2" )
 if [ "$SPA_CODE" = "200" ]; then
   ok "SPA 路由: /dynasty/2 ➔ 200"
 else
@@ -181,8 +216,8 @@ else
 fi
 
 # API 通过前端代理检查
-PROXY_CODE=$(curl -s -o /tmp/_proxy_check.json -w "%{http_code}" "$FRONTEND_URL/api/dynasties" 2>/dev/null)
-P_JSON=$(head -c 2 /tmp/_proxy_check.json 2>/dev/null)
+PROXY_CODE=$(curl -s -o /tmp/_proxy_check.json -w "%{http_code}" "$FRONTEND_URL/api/dynasties" )
+P_JSON=$(head -c 2 /tmp/_proxy_check.json )
 if [ "$PROXY_CODE" = "200" ] && [ "$P_JSON" = "[{" ]; then
   ok "前端代理: API 透传正常"
 else

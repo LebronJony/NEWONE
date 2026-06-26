@@ -1,6 +1,6 @@
 <template>
   <div class="member-grid">
-    <div v-for="m in members" :key="m.id" class="member-card">
+    <div v-for="m in members" :key="m.id" class="member-card" @click="$emit('select', m)" style="cursor:pointer">
       <div class="mc-top">
         <span class="mc-role" :style="{ background: getRoleColor(m.role) }">{{ m.role }}</span>
         <span class="mc-meta">{{ m.lifespan }}</span>
@@ -14,7 +14,8 @@
 
 <script setup lang="ts">
 import type { RoyalMember } from '../../types'
-defineProps<{ members: RoyalMember[] }>()
+const emit = defineEmits<{ (e: 'select', m: any): void }>()
+const props = defineProps<{ members: RoyalMember[] }>()
 
 const roleColors: Record<string, string> = {
   '皇帝': '#8b1a1a', '皇后': '#c0392b', '名后': '#c0392b',
