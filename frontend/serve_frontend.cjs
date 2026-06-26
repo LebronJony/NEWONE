@@ -44,14 +44,15 @@ http.createServer((req, res) => {
       // SPA 路由：返回 index.html
       fs.readFile(path.join(DIST_DIR, 'index.html'), (err2, data2) => {
         if (err2) { res.writeHead(500); res.end('Error'); return; }
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
         res.end(data2);
       });
       return;
     }
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
     res.end(data);
   });
 }).listen(PORT, '127.0.0.1', () => {
   console.log(`Frontend server running at http://localhost:${PORT}/`);
 });
+// File updated - see res.writeHead below for Cache-Control
