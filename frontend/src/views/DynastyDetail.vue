@@ -98,26 +98,23 @@
             著名历史人物
             <button class="edit-btn" @click="startMemberEdit" v-if="!memberEditing">&#9998; 管理人物</button>
           </h2>
-          <div v-if="memberEditing" class="edit-member-panel">
+          <div v-if="memberEditing" class="edit-event-panel">
             <div class="edit-event-toolbar">
               <button class="add-event-btn" @click="addMember">+ 添加人物</button>
               <button class="save-btn" @click="saveMembers" :disabled="memberSaving">{{ memberSaving ? '保存中...' : '保存全部' }}</button>
               <button class="cancel-btn" @click="cancelMemberEdit">取消</button>
             </div>
-            <div v-if="memberFormOpen" class="member-form">
+            <div v-if="memberFormOpen" class="event-form">
               <div class="ef-row"><label>姓名</label><input v-model="memberForm.name" class="ef-input"></div>
               <div class="ef-row"><label>称号</label><input v-model="memberForm.title" class="ef-input"></div>
-              <div class="ef-row"><label>生卒年</label><input v-model="memberForm.lifespan" class="ef-input" placeholder="如：690-705"></div>
-              <div class="ef-row"><label>角色</label>
-                <select v-model="memberForm.role" class="ef-input">
+              <div class="ef-row"><label>生卒年</label><input v-model="memberForm.lifespan" class="ef-input"></div>
+              <div class="ef-row"><label>角色</label><select v-model="memberForm.role" class="ef-input">
                   <option>皇帝</option><option>皇后</option><option>太后</option><option>名后</option>
                   <option>皇子</option><option>公主</option><option>宰相</option><option>名臣</option>
                   <option>诗人</option><option>文学家</option><option>史学家</option><option>科学家</option>
                   <option>大将</option><option>将领</option><option>改革家</option><option>谋士</option>
-                  <option>宦官</option><option>外交家</option><option>僧侣</option><option>艺术家</option>
-                  <option>名士</option>
-                </select>
-              </div>
+                  <option>宦官</option><option>外交家</option><option>僧侣</option><option>艺术家</option><option>名士</option>
+                </select></div>
               <div class="ef-row"><label>人物介绍</label><textarea v-model="memberForm.description" class="ef-textarea" rows="3"></textarea></div>
               <div class="edit-actions">
                 <button class="save-btn" @click="saveMemberItem">{{ memberFormIdx === null ? '添加' : '更新' }}</button>
@@ -125,12 +122,12 @@
               </div>
             </div>
             <div class="edit-event-list">
-              <div v-for="(m, idx) in localMembers" :key="idx" class="member-list-item">
+              <div v-for="(m, idx) in localMembers" :key="idx" class="event-list-item">
                 <div class="eli-info">
-                  <span class="mli-role" :style="{ background: getRoleColor(m.role) }">{{ m.role }}</span>
                   <strong>{{ m.name }}</strong>
                   <span class="mli-title">{{ m.title }}</span>
-                  <span class="mli-life">{{ m.lifespan }}</span>
+                  <span class="eli-year">{{ m.lifespan }}</span>
+                  <span class="eli-type" :style="{ background: getRoleColor(m.role) }">{{ m.role }}</span>
                 </div>
                 <div class="eli-actions">
                   <button class="eli-btn edit" @click="startMemberForm(idx, m)">编辑</button>
@@ -197,7 +194,8 @@
                   <option>经济</option><option>改革</option><option>工程</option><option>科技</option>
                 </select>
               </div>
-              <div class="ef-row"><label>详细描述</label><textarea v-model="eventEdit.item.description" class="ef-textarea" rows="3"></textarea></div>
+              <div class="ef-row"><label>简要概述</label><textarea v-model="eventEdit.item.description" class="ef-textarea" rows="2"></textarea></div>
+              <div class="ef-row"><label>详细过程</label><textarea v-model="eventEdit.item.detail" class="ef-textarea" rows="5" placeholder="前因后果、详细过程（弹窗中展示）"></textarea></div>
               <div class="ef-row"><label>历史影响</label><textarea v-model="eventEdit.item.significance" class="ef-textarea" rows="2"></textarea></div>
               <div class="edit-actions">
                 <button class="save-btn" @click="saveEventItem">{{ eventEdit.idx === null ? '添加' : '更新' }}</button>
@@ -221,15 +219,14 @@
           <template v-else>
           <p style="margin-bottom:16px;color:var(--color-text-muted);">从政治、军事、外交、文化到经济、改革的重大历史事件</p>
           <div class="dynasty-events">
-          <div v-for="(ev, idx) in dynastyEvents" :key="idx" class="de-card">
+          <div v-for="(ev, idx) in dynastyEvents" :key="idx" class="de-card" @click="openEventDetail(ev)">
             <div class="de-hd">
               <span class="de-name">{{ ev.name }}</span>
               <span class="de-year">{{ ev.year }}</span>
               <span v-if="ev.era" class="de-era">{{ ev.era }}</span>
               <span v-if="ev.type" class="de-type" :style="{background:typeColor(ev.type)}">{{ ev.type }}</span>
             </div>
-            <p class="de-desc">{{ ev.description }}</p>
-            <div class="de-sig">{{ ev.significance }}</div>
+            <p class="de-desc">{{ ev.description.slice(0, 80) }}{{ ev.description.length > 80 ? '...' : '' }}</p>
           </div>
         </div>
         <h3 style="margin:24px 0 8px;font-size:1rem;color:var(--color-muted);">历代帝王大事记</h3>
@@ -237,6 +234,23 @@
         </template>
         </section>
       </main>
+        <div v-if="eventDetail" class="modal-overlay" @click.self="eventDetail = null">
+          <div class="modal-content">
+            <button class="modal-close" @click="eventDetail = null">&times;</button>
+            <div class="modal-header">
+              <h3>{{ eventDetail.name }}</h3>
+              <div class="modal-meta">
+                <span class="modal-year">{{ eventDetail.year }}</span>
+                <span v-if="eventDetail.era" class="modal-era">{{ eventDetail.era }}</span>
+                <span v-if="eventDetail.type" class="modal-type" :style="{ background: typeColor(eventDetail.type) }">{{ eventDetail.type }}</span>
+              </div>
+            </div>
+            <div class="modal-body">
+              <div class="modal-section"><h4>事件背景与起因</h4><div class="modal-text">{{ eventDetail.detail || eventDetail.description }}</div></div>
+              <div v-if="eventDetail.significance" class="modal-section"><h4>历史影响</h4><div class="modal-text modal-impact">{{ eventDetail.significance }}</div></div>
+            </div>
+          </div>
+        </div>
     </div>
   </template>
 </template>
@@ -406,179 +420,97 @@ function sortYear(year: string): number {
 }
 
 
+
+// Editing state
 const editingKey = ref<string | null>(null)
-const editContent = ref("")  // will fix
+const editContent = ref('')
 const saving = ref(false)
 const eventEdit = ref<{open: boolean; idx: number | null; item: any}>({ open: false, idx: null, item: {} })
 const localEvents = ref<any[] | null>(null)
-
-
-
-function startEdit(key: string, val: string) {
-  editingKey.value = key
-  editContent.value = val || ''
-}
-
-function cancelEdit() {
-  editingKey.value = null
-  editContent.value = ''
-  eventEdit.value = { open: false, idx: null, item: {} }
-}
-
-async function saveEdit(key: string) {
-  if (!detail.value) return
-  saving.value = true
-  try {
-    const ns = { ...sections.value, [key]: editContent.value }
-    await updateDynastySections(detail.value.id, ns)
-    detail.value.description = JSON.stringify(ns)
-    editingKey.value = null
-    editContent.value = ''
-  } catch (e: any) {
-    alert('保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-function startEventEdit(idx: number | null, item: any) {
-  eventEdit.value = { open: true, idx, item: { ...item } }
-}
-
-function addEvent() {
-  startEventEdit(null, { name: '', year: '', description: '', significance: '', era: '', type: '政治' })
-}
-
-function deleteEvent(idx: number) {
-  if (localEvents.value) localEvents.value.splice(idx, 1)
-}
-
-function saveEventItem() {
-  if (!localEvents.value) return
-  const item = { ...eventEdit.value.item }
-  if (eventEdit.value.idx === null) {
-    localEvents.value.push(item)
-  } else {
-    localEvents.value[eventEdit.value.idx] = item
-  }
-  eventEdit.value = { open: false, idx: null, item: {} }
-}
-
-async function saveEvents() {
-  if (!detail.value || !localEvents.value) return
-  saving.value = true
-  try {
-    const ns = { ...sections.value, events: localEvents.value }
-    await updateDynastySections(detail.value.id, ns)
-    detail.value.description = JSON.stringify(ns)
-    editingKey.value = null
-  } catch (e: any) {
-    alert('保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-// Member editing
-const localMembers = ref<any[] | null>(null)
+const eventDetail = ref<any>(null)
 const memberEditing = ref(false)
 const memberSaving = ref(false)
 const memberFormOpen = ref(false)
 const memberForm = ref({ name: '', title: '', lifespan: '', role: '名臣', description: '' })
 const memberFormIdx = ref<number | null>(null)
+let localMembers = ref<any[] | null>(null)
 let _figCache: Record<number, any[]> = {}
 
 function getCachedHistoricalFigures(dynastyId: number): any[] {
-  if (!_figCache[dynastyId]) {
-    _figCache[dynastyId] = getHistoricalFigures(dynastyId)
-  }
+  if (!_figCache[dynastyId]) { _figCache[dynastyId] = getHistoricalFigures(dynastyId) }
   return _figCache[dynastyId] || []
 }
 
 function mergeMembers(list: any[]): any[] {
   const seen = new Set<string>()
-  return list.filter(m => {
-    if (seen.has(m.name)) return false
-    seen.add(m.name)
-    return true
-  }).map((m, i) => ({ ...m, id: -(i + 1) }))
+  return list.filter((m: any) => { if (seen.has(m.name)) return false; seen.add(m.name); return true })
+    .map((m: any, i: number) => ({ ...m, id: -(i + 1) }))
 }
 
 function getRoleColor(role: string): string {
-  const colors: Record<string, string> = {
-    '皇帝': '#8b1a1a', '皇后': '#c0392b', '名后': '#c0392b', '太后': '#c0392b',
-    '皇子': '#5a4a3a', '公主': '#8b6914', '宰相': '#2c3e50', '名臣': '#2c3e50',
-    '诗人': '#8b6914', '文学家': '#8b6914', '史学家': '#4a6741', '科学家': '#4a6741',
-    '大将': '#1a3a2a', '将领': '#1a3a2a', '改革家': '#c0392b', '谋士': '#2d2d2d',
-    '宦官': '#5a4a3a', '外交家': '#2c3e50', '僧侣': '#1a3a2a', '艺术家': '#5a4a7a',
-    '名士': '#8b6914', '大臣': '#2c3e50', '政治家': '#2c3e50',
-    '书法家': '#5a4a7a', '画家': '#5a4a7a', '天文学家': '#4a6741',
-    '医学家': '#3a6a4a', '发明家': '#8b6914', '高僧': '#1a3a2a',
-    '航海家': '#2c3e50', '旅行家': '#8b6914',
-  }
-  return colors[role] || '#888'
+  const c: Record<string, string> = {'皇帝':'#8b1a1a','皇后':'#c0392b','太后':'#c0392b','皇子':'#5a4a3a','公主':'#8b6914','宰相':'#2c3e50','名臣':'#2c3e50','诗人':'#8b6914','文学家':'#8b6914','史学家':'#4a6741','科学家':'#4a6741','大将':'#1a3a2a','改革家':'#c0392b','谋士':'#2d2d2d','宦官':'#5a4a3a','外交家':'#2c3e50','僧侣':'#1a3a2a','艺术家':'#5a4a7a','名士':'#8b6914'}
+  return c[role] || '#888'
 }
+
+function startEdit(key: string, val: string) { editingKey.value = key; editContent.value = val || '' }
+function cancelEdit() { editingKey.value = null; editContent.value = ''; eventEdit.value = { open: false, idx: null, item: {} } }
+
+async function saveEdit(key: string) {
+  if (!detail.value) return; saving.value = true
+  try {
+    const ns = { ...sections.value, [key]: editContent.value }
+    await updateDynastySections(detail.value.id, ns)
+    detail.value.description = JSON.stringify(ns)
+    editingKey.value = null; editContent.value = ''
+  } catch (e: any) { alert('保存失败') } finally { saving.value = false }
+}
+
+function startEventEdit(idx: number | null, item: any) { eventEdit.value = { open: true, idx, item: { ...item } } }
+function addEvent() { startEventEdit(null, { name: '', year: '', description: '', detail: '', significance: '', era: '', type: '政治' }) }
+function deleteEvent(idx: number) { if (localEvents.value) localEvents.value.splice(idx, 1) }
+function saveEventItem() {
+  if (!localEvents.value) return; const item = { ...eventEdit.value.item }
+  if (eventEdit.value.idx === null) localEvents.value.push(item); else localEvents.value[eventEdit.value.idx] = item
+  eventEdit.value = { open: false, idx: null, item: {} }
+}
+
+async function saveEvents() {
+  if (!detail.value || !localEvents.value) return; saving.value = true
+  try {
+    const ns = { ...sections.value, events: localEvents.value }
+    await updateDynastySections(detail.value.id, ns)
+    detail.value.description = JSON.stringify(ns); editingKey.value = null
+  } catch (e: any) { alert('保存失败') } finally { saving.value = false }
+}
+
+function openEventDetail(ev: any) { eventDetail.value = ev }
 
 function startMemberEdit() {
   const sec = detail.value?.description ? JSON.parse(detail.value.description) : {}
-  const stored = sec.storedMembers || []
-  const localFigs = getCachedHistoricalFigures(detail.value!.id)
-  localMembers.value = mergeMembers([...stored, ...localFigs])
-  memberEditing.value = true
+  const stored = sec.storedMembers || []; const localFigs = getCachedHistoricalFigures(detail.value!.id)
+  localMembers.value = mergeMembers([...stored, ...localFigs]); memberEditing.value = true
 }
-
-function cancelMemberEdit() {
-  memberEditing.value = false
-  memberFormOpen.value = false
-  memberForm.value = { name: '', title: '', lifespan: '', role: '名臣', description: '' }
-  memberFormIdx.value = null
-}
-
-function addMember() {
-  memberForm.value = { name: '', title: '', lifespan: '', role: '名臣', description: '' }
-  memberFormIdx.value = null
-  memberFormOpen.value = true
-}
-
-function startMemberForm(idx: number, m: any) {
-  memberForm.value = { ...m }
-  memberFormIdx.value = idx
-  memberFormOpen.value = true
-}
-
+function cancelMemberEdit() { memberEditing.value = false; memberFormOpen.value = false }
+function addMember() { memberForm.value = { name: '', title: '', lifespan: '', role: '名臣', description: '' }; memberFormIdx.value = null; memberFormOpen.value = true }
+function startMemberForm(idx: number, m: any) { memberForm.value = { ...m }; memberFormIdx.value = idx; memberFormOpen.value = true }
 function saveMemberItem() {
   if (!localMembers.value) return
-  localMembers.value.push({ ...memberForm.value })
+  const item = { ...memberForm.value }
+  if (memberFormIdx.value === null) localMembers.value.push(item); else localMembers.value[memberFormIdx.value] = item
   memberFormOpen.value = false
 }
-
-function deleteMember(idx: number) {
-  if (!localMembers.value) return
-  localMembers.value.splice(idx, 1)
-}
+function deleteMember(idx: number) { if (localMembers.value) localMembers.value.splice(idx, 1) }
 
 async function saveMembers() {
-  if (!detail.value || !localMembers.value) return
-  memberSaving.value = true
+  if (!detail.value || !localMembers.value) return; memberSaving.value = true
   try {
     const sec = detail.value.description ? JSON.parse(detail.value.description) : {}
-    const stored = localMembers.value || []
-    sec.storedMembers = stored
+    sec.storedMembers = localMembers.value || []
     await updateDynastySections(detail.value.id, sec)
     detail.value.description = JSON.stringify(sec)
-    // Don't override member grid for non-royal figures
-    detail.value.members = mergeMembers(stored)
-    memberEditing.value = false
-  } catch (e: any) {
-    alert('保存失败: ' + (e.message || '未知错误'))
-  } finally {
-    memberSaving.value = false
-  }
+    detail.value.members = mergeMembers(localMembers.value || []); memberEditing.value = false
+  } catch (e: any) { alert('保存失败') } finally { memberSaving.value = false }
 }
-
-// Merge stored members on initial load
-const origDetail = detail
-// The existing watch or onMounted already handles this
 
 const dynastyEvents = computed(() => {
   const events = localEvents.value || (detail.value ? DYNASTY_EVENTS[detail.value.id] || [] : [])
@@ -595,19 +527,11 @@ const sections = computed<DynastySections>(() => {
   } catch { return {} as DynastySections }
 })
 
-// Initialize local data stores
+// Init edit data
 watch(() => detail.value, (val) => {
   if (!val) return
   const sec = val.description ? JSON.parse(val.description) : {}
-  if (!localEvents.value) {
-    localEvents.value = sec.events || DYNASTY_EVENTS[val.id] || []
-  }
-  const storedMembers = sec.storedMembers || []
-  const localFigs = getCachedHistoricalFigures(val.id)
-  const all = mergeMembers([...storedMembers, ...localFigs])
-  if (all.length > 0) {
-    val.members = [...(val.members || []), ...all]
-  }
+  if (!localEvents.value) localEvents.value = sec.events || DYNASTY_EVENTS[val.id] || []
 })
 
 onMounted(async () => {
@@ -756,76 +680,29 @@ function splitParagraphs(text: string): string[] {
 .content-section p:hover { background: var(--color-card-hover); }
 
 
-/* Edit buttons */
-.edit-btn {
-  display: inline-block; margin-left: 10px; padding: 2px 10px;
-  font-size: 0.72rem; background: var(--color-card);
-  border: 1px solid var(--color-border); border-radius: 4px;
-  color: var(--color-text-muted); cursor: pointer;
-  transition: all 0.2s ease; vertical-align: middle; line-height: 1.6;
-}
+.edit-btn { display: inline-block; margin-left: 10px; padding: 2px 10px; font-size: 0.72rem; background: var(--color-card); border: 1px solid var(--color-border); border-radius: 4px; color: var(--color-text-muted); cursor: pointer; transition: all 0.2s ease; vertical-align: middle; line-height: 1.6; }
 .edit-btn:hover { background: var(--color-oat); color: var(--color-terracotta); border-color: var(--color-terracotta); }
-
 .edit-editor { margin: 12px 0; }
-.edit-textarea {
-  width: 100%; min-height: 120px; padding: 12px 14px;
-  font-size: 0.9rem; line-height: 1.7;
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-  background: var(--color-card); color: var(--color-text);
-  resize: vertical; font-family: inherit;
-  transition: border-color 0.2s ease;
-}
+.edit-textarea { width: 100%; min-height: 120px; padding: 12px 14px; font-size: 0.9rem; line-height: 1.7; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-card); color: var(--color-text); resize: vertical; font-family: inherit; transition: border-color 0.2s ease; }
 .edit-textarea:focus { outline: none; border-color: var(--color-terracotta); }
 .edit-actions { display: flex; gap: 8px; margin-top: 10px; }
-.save-btn {
-  padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
-  border: none; cursor: pointer; font-weight: 600;
-  background: var(--color-terracotta); color: #fff; transition: all 0.2s ease;
-}
+.save-btn { padding: 8px 20px; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: var(--color-terracotta); color: #fff; transition: all 0.2s ease; }
 .save-btn:hover { background: #B05A30; }
 .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.cancel-btn {
-  padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
-  border: 1px solid var(--color-border); cursor: pointer; font-weight: 600;
-  background: var(--color-card); color: var(--color-text); transition: all 0.2s ease;
-}
+.cancel-btn { padding: 8px 20px; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--color-border); cursor: pointer; font-weight: 600; background: var(--color-card); color: var(--color-text); transition: all 0.2s ease; }
 .cancel-btn:hover { background: var(--color-border); }
-
-/* Event/Member editor panels (shared) */
-.edit-event-panel, .edit-member-panel {
-  background: var(--color-card); border: 1px solid var(--color-border);
-  border-radius: var(--radius); padding: 20px; margin: 12px 0;
-}
-.edit-event-toolbar {
-  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
-}
-.add-event-btn {
-  padding: 8px 16px; font-size: 0.85rem; border-radius: 6px;
-  background: var(--color-sage); color: #fff; border: none; cursor: pointer;
-  font-weight: 600; transition: all 0.2s ease; margin-right: auto;
-}
+.edit-event-panel { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 20px; margin: 12px 0; }
+.edit-event-toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.add-event-btn { padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; background: var(--color-sage); color: #fff; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s ease; margin-right: auto; }
 .add-event-btn:hover { background: var(--color-moss); }
-.event-form {
-  background: rgba(232, 220, 199, 0.3); border-radius: var(--radius-sm);
-  padding: 18px; margin-bottom: 16px; border: 1px solid var(--color-border);
-}
+.event-form { background: rgba(232, 220, 199, 0.3); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px; border: 1px solid var(--color-border); }
 .ef-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
 .ef-row label { width: 80px; flex-shrink: 0; font-size: 0.82rem; color: var(--color-text-light); padding-top: 8px; font-weight: 600; }
-.ef-input, .ef-textarea {
-  flex: 1; padding: 8px 12px; font-size: 0.85rem;
-  border: 1px solid var(--color-border); border-radius: 4px;
-  background: #fff; color: var(--color-text); font-family: inherit;
-}
+.ef-input, .ef-textarea { flex: 1; padding: 8px 12px; font-size: 0.85rem; border: 1px solid var(--color-border); border-radius: 4px; background: #fff; color: var(--color-text); font-family: inherit; }
 .ef-input:focus, .ef-textarea:focus { outline: none; border-color: var(--color-terracotta); }
 .ef-textarea { resize: vertical; min-height: 60px; }
-
 .edit-event-list { display: flex; flex-direction: column; gap: 6px; }
-.event-list-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; background: var(--color-card);
-  border: 1px solid var(--color-border); border-radius: 6px;
-  transition: background 0.2s ease;
-}
+.event-list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: 6px; transition: background 0.2s ease; }
 .event-list-item:hover { background: var(--color-card-hover); }
 .eli-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .eli-info strong { font-size: 0.9rem; color: var(--color-earth); }
@@ -839,11 +716,22 @@ function splitParagraphs(text: string): string[] {
 .eli-btn.del:hover { background: #fee2e2; }
 .mli-title { font-size: 0.72rem; color: var(--color-text-muted); margin: 0 4px; }
 
-@media (max-width: 768px) {
-  .ef-row { flex-direction: column; }
-  .ef-row label { width: auto; }
-  .event-list-item { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .event-list-item .eli-actions { align-self: flex-end; }
-}
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); }
+.modal-content { background: var(--color-card); border-radius: var(--radius); max-width: 640px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative; }
+.modal-close { position: absolute; top: 12px; right: 16px; font-size: 1.8rem; background: none; border: none; cursor: pointer; color: var(--color-text-muted); line-height: 1; }
+.modal-close:hover { color: var(--color-terracotta); }
+.modal-header { padding: 28px 28px 12px; border-bottom: 1px solid var(--color-border); }
+.modal-header h3 { font-family: var(--font-serif); font-size: 1.5rem; color: var(--color-earth); margin-bottom: 8px; }
+.modal-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.modal-year { font-size: 0.82rem; color: var(--color-terracotta); font-weight: 600; }
+.modal-era { font-size: 0.75rem; color: var(--color-text-muted); background: var(--color-oat); padding: 2px 10px; border-radius: 4px; }
+.modal-type { font-size: 0.68rem; color: #fff; padding: 2px 10px; border-radius: 10px; font-weight: 600; }
+.modal-body { padding: 20px 28px 28px; }
+.modal-section h4 { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--color-earth); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid var(--color-terracotta); display: inline-block; }
+.modal-text { font-size: 0.92rem; line-height: 1.85; color: var(--color-text-light); text-align: justify; }
+.modal-impact { border-left: 3px solid var(--color-terracotta); padding: 12px 16px; background: rgba(232, 220, 199, 0.2); border-radius: var(--radius-sm); }
+
+@media (max-width: 768px) { .ef-row { flex-direction: column; } .ef-row label { width: auto; } .event-list-item { flex-direction: column; align-items: flex-start; gap: 6px; } .event-list-item .eli-actions { align-self: flex-end; } }
 
 </style>
