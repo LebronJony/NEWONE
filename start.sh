@@ -32,31 +32,7 @@ echo ""
 
 # ========== 1. 关闭旧终端窗口 ==========
 echo "  ── 关闭旧终端窗口 ──"
-osascript -e '
-tell application "Terminal"
-  set allWindows to every window
-  set keepIds to {}
-  try
-    set keepIds to id of front window
-  end try
-  repeat with w in allWindows
-    set wid to id of w
-    set found to false
-    repeat with k in keepIds
-      if wid = k then set found to true
-    end repeat
-    if not found then
-      try
-        set wTab to the first tab of w
-        set wTitle to the custom title of wTab as string
-        if wTitle contains "spring-boot" or wTitle contains "serve_frontend" or wTitle contains "mvn" or wTitle contains "node" then
-          close w
-        end if
-      end try
-    end if
-  end repeat
-end tell
-' 2>/dev/null && ok "旧终端窗口已关闭" || info "无需关闭旧窗口"
+osascript -e 'tell application "Terminal" to close (every window whose frontmost is false)' 2>/dev/null && ok "旧终端窗口已关闭" || info "无需关闭旧窗口"
 
 # ========== 2. 清除缓存 ==========
 echo ""
@@ -79,7 +55,7 @@ BACKEND_OK=false
 if lsof -i :$BACKEND_PORT -P -n 2>/dev/null | grep -q LISTEN; then
   HTTP_CODE=$(curl -s -o /tmp/_be_check.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
   if [ "$HTTP_CODE" = "200" ]; then
-    H_COUNT=$(head -c 3 /tmp/_be_check.json 2>/dev/null)
+    H_COUNT=$(head -c 2 /tmp/_be_check.json 2>/dev/null)
     if [ "$H_COUNT" = "[{" ]; then
       ok "运行正常"
       BACKEND_OK=true
@@ -172,7 +148,7 @@ echo "  ── 健康检查 ──"
 ALL_OK=true
 # 后端检查
 BE_CODE=$(curl -s -o /tmp/_be_final.json -w "%{http_code}" "$BACKEND_HEALTH" 2>/dev/null)
-BE_JSON=$(head -c 3 /tmp/_be_final.json 2>/dev/null)
+BE_JSON=$(head -c 2 /tmp/_be_final.json 2>/dev/null)
 if [ "$BE_CODE" = "200" ] && [ "$BE_JSON" = "[{" ]; then
   D_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/_be_final.json')); print(len(d))" 2>/dev/null || echo "0")
   ok "后端 API: ${D_COUNT:-?} 个朝代获取成功"
@@ -206,7 +182,7 @@ fi
 
 # API 通过前端代理检查
 PROXY_CODE=$(curl -s -o /tmp/_proxy_check.json -w "%{http_code}" "$FRONTEND_URL/api/dynasties" 2>/dev/null)
-P_JSON=$(head -c 3 /tmp/_proxy_check.json 2>/dev/null)
+P_JSON=$(head -c 2 /tmp/_proxy_check.json 2>/dev/null)
 if [ "$PROXY_CODE" = "200" ] && [ "$P_JSON" = "[{" ]; then
   ok "前端代理: API 透传正常"
 else
