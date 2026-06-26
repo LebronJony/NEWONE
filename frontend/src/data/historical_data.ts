@@ -86,7 +86,21 @@ export const HISTORICAL_FIGURES: Record<number, Omit<RoyalMember, 'id'>[]> = {
     { dynastyId:10, name:'康有为', title:'清末改革家', lifespan:'1858-1927', role:'改革家', description:'公车上书推动维新变法。戊戌变法核心人物，变法失败后流亡海外' },
     { dynastyId:10, name:'梁启超', title:'清末思想家', lifespan:'1873-1929', role:'政治家', description:'师从康有为。戊戌变法领袖之一。变法失败后流亡日本，代表作《少年中国说》' },
   ],
+  11: [
+    { dynastyId:11, name:'关羽', title:'蜀汉名将', lifespan:'?-220', role:'大将', description:'字云长，河东解良人。与刘备、张飞桃园结义。温酒斩华雄、斩颜良诛文丑、过五关斩六将。水淹七军威震华夏。后被吕蒙偷袭荆州，败走麦城被俘不屈而死。被后世尊为"武圣"，与孔子并称' },
+    { dynastyId:11, name:'张飞', title:'蜀汉名将', lifespan:'?-221', role:'大将', description:'字翼德，涿郡人。勇猛善战，与关羽并称"万人敌"。当阳桥上一声吼退曹军。义释严颜、大败张郃。后为替关羽报仇，被部下范疆张达刺杀' },
+    { dynastyId:11, name:'诸葛亮', title:'蜀汉丞相', lifespan:'181-234', role:'政治家', description:'字孔明，琅琊阳都人。号"卧龙"。三顾茅庐后出山辅佐刘备。提出《隆中对》战略。赤壁之战联吴抗曹。受托孤之重辅佐刘禅。七擒孟获平定南中。六出祁山北伐曹魏。病逝五丈原。被誉为"千古良相"代表' },
+    { dynastyId:11, name:'周瑜', title:'东吴大都督', lifespan:'175-210', role:'大将', description:'字公瑾，庐江舒县人。精通音律，与孙策交好。赤壁之战中为前线总指挥，以火攻大败曹操。赤壁之战后建议孙权软禁刘备。英年早逝，年仅三十六岁' },
+    { dynastyId:11, name:'司马懿', title:'曹魏权臣', lifespan:'179-251', role:'政治家', description:'字仲达，河内温县人。曹魏四朝元老。多次成功抵御诸葛亮北伐。发动高平陵之变夺取曹魏大权。其孙司马炎最终代魏建晋' },
+    { dynastyId:11, name:'赵云', title:'蜀汉名将', lifespan:'?-229', role:'大将', description:'字子龙，常山真定人。长坂坡单骑救阿斗、截江夺阿斗。汉水之战一身是胆。被刘备誉为"子龙一身是胆也"。蜀汉五虎上将之一' },
+    { dynastyId:11, name:'曹操', title:'魏武帝（追尊）', lifespan:'155-220', role:'名臣', description:'字孟德，沛国谯县人。东汉末年杰出的政治家、军事家、文学家。挟天子以令诸侯，官渡之战击败袁绍统一北方。推行屯田制，唯才是举。与其子曹丕、曹植并称"三曹"，为建安文学代表人物' },
+    { dynastyId:11, name:'黄忠', title:'蜀汉名将', lifespan:'?-220', role:'大将', description:'字汉升，南阳人。原为刘表部将，后归刘备。定军山阵斩夏侯渊，勇冠三军。蜀汉五虎上将之一' },
+    { dynastyId:11, name:'张辽', title:'曹魏名将', lifespan:'169-222', role:'大将', description:'字文远，雁门马邑人。先后从属丁原、董卓、吕布，后归曹操。逍遥津之战以八百骑大破孙权十万大军，威震逍遥津。曹魏五子良将之首' },
+    { dynastyId:11, name:'陆逊', title:'东吴名将', lifespan:'183-245', role:'大将', description:'字伯言，吴郡吴县人。夷陵之战中火烧连营大败刘备。后官至东吴丞相，是东吴栋梁之臣' },
+  ],
+
 }
+
 
 export function getHistoricalFigures(dynastyId: number): Omit<RoyalMember, 'id'>[] {
   return HISTORICAL_FIGURES[dynastyId] || []

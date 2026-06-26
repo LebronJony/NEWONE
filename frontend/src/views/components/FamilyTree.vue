@@ -71,8 +71,8 @@ import type { LineageTreeNode } from '../../data/lineage_tree_data'
 
 const props = defineProps<{ rulers: Ruler[] }>()
 
-const dynastyChars: Record<number, string> = {1:'秦',2:'汉',3:'晋',4:'南北朝',5:'隋',6:'唐',7:'宋',8:'元',9:'明',10:'清'}
-const dc: Record<number, string> = {1:'linear-gradient(135deg,#2d2d2d,#5a4a3a)',2:'linear-gradient(135deg,#8b1a1a,#c0392b)',3:'linear-gradient(135deg,#4a6741,#6b8e5a)',4:'linear-gradient(135deg,#5a4a7a,#7a6a9a)',5:'linear-gradient(135deg,#8b6914,#b8942e)',6:'linear-gradient(135deg,#c0392b,#e67e22)',7:'linear-gradient(135deg,#2c3e50,#4a6a8a)',8:'linear-gradient(135deg,#6a4a2a,#9a7a4a)',9:'linear-gradient(135deg,#8b1a1a,#d4a017)',10:'linear-gradient(135deg,#1a3a2a,#2d6a4f)'}
+const dynastyChars: Record<number, string> = {1:'秦',2:'汉',3:'晋',4:'南北朝',5:'隋',6:'唐',7:'宋',8:'元',9:'明',10:'清',11:'三国'}
+const dc: Record<number, string> = {1:'linear-gradient(135deg,#2d2d2d,#5a4a3a)',2:'linear-gradient(135deg,#8b1a1a,#c0392b)',3:'linear-gradient(135deg,#4a6741,#6b8e5a)',4:'linear-gradient(135deg,#5a4a7a,#7a6a9a)',5:'linear-gradient(135deg,#8b6914,#b8942e)',6:'linear-gradient(135deg,#c0392b,#e67e22)',7:'linear-gradient(135deg,#2c3e50,#4a6a8a)',8:'linear-gradient(135deg,#6a4a2a,#9a7a4a)',9:'linear-gradient(135deg,#8b1a1a,#d4a017)',10:'linear-gradient(135deg,#1a3a2a,#2d6a4f)',11:'linear-gradient(135deg,#b8860b,#d4a017)'}
 
 function getEmperorStyle(ruler: Ruler) { return { background: dc[ruler.dynastyId] || dc[1] } }
 function dynastyChar(did: number) { return dynastyChars[did] || '皇' }
