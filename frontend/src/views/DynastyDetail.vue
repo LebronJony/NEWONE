@@ -43,23 +43,105 @@
         </section>
 
         <section class="content-section" id="origins">
-          <h2>家族渊源</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.origins)" :key="i">{{ p }}</p>
+          <h2>
+            家族渊源
+            <button class="edit-btn" @click="startEdit('origins', sections.origins)">&#9998; 编辑</button>
+          </h2>
+          <div v-if="editingKey === 'origins'" class="edit-editor">
+            <textarea v-model="editContent" class="edit-textarea" :disabled="saving"></textarea>
+            <div class="edit-actions">
+              <button class="save-btn" @click="saveEdit('origins')" :disabled="saving">{{ saving ? '保存中...' : '保 存' }}</button>
+              <button class="cancel-btn" @click="cancelEdit">取 消</button>
+            </div>
+          </div>
+          <template v-else>
+            <p v-for="(p, i) in splitParagraphs(sections.origins)" :key="i">{{ p }}</p>
+          </template>
         </section>
 
         <section class="content-section" id="founding">
-          <h2>开国之路</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.founding)" :key="i">{{ p }}</p>
+          <h2>
+            开国之路
+            <button class="edit-btn" @click="startEdit('founding', sections.founding)">&#9998; 编辑</button>
+          </h2>
+          <div v-if="editingKey === 'founding'" class="edit-editor">
+            <textarea v-model="editContent" class="edit-textarea" :disabled="saving"></textarea>
+            <div class="edit-actions">
+              <button class="save-btn" @click="saveEdit('founding')" :disabled="saving">{{ saving ? '保存中...' : '保 存' }}</button>
+              <button class="cancel-btn" @click="cancelEdit">取 消</button>
+            </div>
+          </div>
+          <template v-else>
+            <p v-for="(p, i) in splitParagraphs(sections.founding)" :key="i">{{ p }}</p>
+          </template>
         </section>
 
         <section class="content-section" id="zenith">
-          <h2>鼎盛时期</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.zenith)" :key="i">{{ p }}</p>
+          <h2>
+            鼎盛时期
+            <button class="edit-btn" @click="startEdit('zenith', sections.zenith)">&#9998; 编辑</button>
+          </h2>
+          <div v-if="editingKey === 'zenith'" class="edit-editor">
+            <textarea v-model="editContent" class="edit-textarea" :disabled="saving"></textarea>
+            <div class="edit-actions">
+              <button class="save-btn" @click="saveEdit('zenith')" :disabled="saving">{{ saving ? '保存中...' : '保 存' }}</button>
+              <button class="cancel-btn" @click="cancelEdit">取 消</button>
+            </div>
+          </div>
+          <template v-else>
+            <p v-for="(p, i) in splitParagraphs(sections.zenith)" :key="i">{{ p }}</p>
+          </template>
         </section>
 
         <section class="content-section" id="members">
-          <h2>著名历史人物</h2>
-          <MemberGrid :members="detail.members" />
+          <h2>
+            著名历史人物
+            <button class="edit-btn" @click="startMemberEdit" v-if="!memberEditing">&#9998; 管理人物</button>
+          </h2>
+          <div v-if="memberEditing" class="edit-member-panel">
+            <div class="edit-event-toolbar">
+              <button class="add-event-btn" @click="addMember">+ 添加人物</button>
+              <button class="save-btn" @click="saveMembers" :disabled="memberSaving">{{ memberSaving ? '保存中...' : '保存全部' }}</button>
+              <button class="cancel-btn" @click="cancelMemberEdit">取消</button>
+            </div>
+            <div v-if="memberFormOpen" class="member-form">
+              <div class="ef-row"><label>姓名</label><input v-model="memberForm.name" class="ef-input"></div>
+              <div class="ef-row"><label>称号</label><input v-model="memberForm.title" class="ef-input"></div>
+              <div class="ef-row"><label>生卒年</label><input v-model="memberForm.lifespan" class="ef-input" placeholder="如：690-705"></div>
+              <div class="ef-row"><label>角色</label>
+                <select v-model="memberForm.role" class="ef-input">
+                  <option>皇帝</option><option>皇后</option><option>太后</option><option>名后</option>
+                  <option>皇子</option><option>公主</option><option>宰相</option><option>名臣</option>
+                  <option>诗人</option><option>文学家</option><option>史学家</option><option>科学家</option>
+                  <option>大将</option><option>将领</option><option>改革家</option><option>谋士</option>
+                  <option>宦官</option><option>外交家</option><option>僧侣</option><option>艺术家</option>
+                  <option>名士</option>
+                </select>
+              </div>
+              <div class="ef-row"><label>人物介绍</label><textarea v-model="memberForm.description" class="ef-textarea" rows="3"></textarea></div>
+              <div class="edit-actions">
+                <button class="save-btn" @click="saveMemberItem">{{ memberFormIdx === null ? '添加' : '更新' }}</button>
+                <button class="cancel-btn" @click="memberFormOpen = false">关闭</button>
+              </div>
+            </div>
+            <div class="edit-event-list">
+              <div v-for="(m, idx) in localMembers" :key="idx" class="member-list-item">
+                <div class="eli-info">
+                  <span class="mli-role" :style="{ background: getRoleColor(m.role) }">{{ m.role }}</span>
+                  <strong>{{ m.name }}</strong>
+                  <span class="mli-title">{{ m.title }}</span>
+                  <span class="mli-life">{{ m.lifespan }}</span>
+                </div>
+                <div class="eli-actions">
+                  <button class="eli-btn edit" @click="startMemberForm(idx, m)">编辑</button>
+                  <button class="eli-btn del" @click="deleteMember(idx)">删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <template v-else>
+            <MemberGrid :members="detail.members" />
+          </template>
         </section>
 
         <section class="content-section" id="tree">
@@ -68,8 +150,20 @@
         </section>
 
         <section class="content-section" id="decline">
-          <h2>衰落与终结</h2>
-          <p v-for="(p, i) in splitParagraphs(sections.decline)" :key="i">{{ p }}</p>
+          <h2>
+            衰落与终结
+            <button class="edit-btn" @click="startEdit('decline', sections.decline)">&#9998; 编辑</button>
+          </h2>
+          <div v-if="editingKey === 'decline'" class="edit-editor">
+            <textarea v-model="editContent" class="edit-textarea" :disabled="saving"></textarea>
+            <div class="edit-actions">
+              <button class="save-btn" @click="saveEdit('decline')" :disabled="saving">{{ saving ? '保存中...' : '保 存' }}</button>
+              <button class="cancel-btn" @click="cancelEdit">取 消</button>
+            </div>
+          </div>
+          <template v-else>
+            <p v-for="(p, i) in splitParagraphs(sections.decline)" :key="i">{{ p }}</p>
+          </template>
         </section>
 
         <section class="content-section" id="rulers">
@@ -83,8 +177,49 @@
         </section>
 
         <section class="content-section" id="events">
-          <h2>著名历史事件</h2>
-          <p style="margin-bottom:16px;color:var(--color-muted);">从政治、军事、外交、文化到经济、改革的重大历史事件</p>
+          <h2>
+            著名历史事件
+            <button class="edit-btn" @click="startEdit('events', '')" v-if="editingKey !== 'events'">&#9998; 管理事件</button>
+          </h2>
+          <div v-if="editingKey === 'events'" class="edit-event-panel">
+            <div class="edit-event-toolbar">
+              <button class="add-event-btn" @click="addEvent">+ 添加事件</button>
+              <button class="save-btn" @click="saveEvents" :disabled="saving">{{ saving ? '保存中...' : '保存全部' }}</button>
+              <button class="cancel-btn" @click="cancelEdit">取消</button>
+            </div>
+            <div v-if="eventEdit.open" class="event-form">
+              <div class="ef-row"><label>事件名称</label><input v-model="eventEdit.item.name" class="ef-input"></div>
+              <div class="ef-row"><label>年份</label><input v-model="eventEdit.item.year" class="ef-input"></div>
+              <div class="ef-row"><label>时期人物</label><input v-model="eventEdit.item.era" class="ef-input"></div>
+              <div class="ef-row"><label>类型</label>
+                <select v-model="eventEdit.item.type" class="ef-input">
+                  <option>军事</option><option>政治</option><option>外交</option><option>文化</option>
+                  <option>经济</option><option>改革</option><option>工程</option><option>科技</option>
+                </select>
+              </div>
+              <div class="ef-row"><label>详细描述</label><textarea v-model="eventEdit.item.description" class="ef-textarea" rows="3"></textarea></div>
+              <div class="ef-row"><label>历史影响</label><textarea v-model="eventEdit.item.significance" class="ef-textarea" rows="2"></textarea></div>
+              <div class="edit-actions">
+                <button class="save-btn" @click="saveEventItem">{{ eventEdit.idx === null ? '添加' : '更新' }}</button>
+                <button class="cancel-btn" @click="eventEdit = { open: false, idx: null, item: {} }">关闭</button>
+              </div>
+            </div>
+            <div class="edit-event-list">
+              <div v-for="(ev, idx) in (localEvents || [])" :key="idx" class="event-list-item">
+                <div class="eli-info">
+                  <strong>{{ ev.name }}</strong>
+                  <span class="eli-year">{{ ev.year }}</span>
+                  <span class="eli-type" :style="{ background: typeColor(ev.type) }">{{ ev.type }}</span>
+                </div>
+                <div class="eli-actions">
+                  <button class="eli-btn edit" @click="startEventEdit(idx, ev)">编辑</button>
+                  <button class="eli-btn del" @click="deleteEvent(idx)">删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <template v-else>
+          <p style="margin-bottom:16px;color:var(--color-text-muted);">从政治、军事、外交、文化到经济、改革的重大历史事件</p>
           <div class="dynasty-events">
           <div v-for="(ev, idx) in dynastyEvents" :key="idx" class="de-card">
             <div class="de-hd">
@@ -99,6 +234,7 @@
         </div>
         <h3 style="margin:24px 0 8px;font-size:1rem;color:var(--color-muted);">历代帝王大事记</h3>
         <RulerEvents :rulers="detail.rulers" />
+        </template>
         </section>
       </main>
     </div>
@@ -106,9 +242,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getDynastyDetail } from '../api/dynasty'
+import { getDynastyDetail, updateDynastySections } from '../api/dynasty'
 import type { DynastyDetail, DynastySections } from '../types'
 import FactGrid from './components/FactGrid.vue'
 import MemberGrid from './components/MemberGrid.vue'
@@ -269,8 +405,183 @@ function sortYear(year: string): number {
   return y.startsWith('前') ? -parseInt(y.slice(1), 10) : parseInt(y, 10)
 }
 
+
+const editingKey = ref<string | null>(null)
+const editContent = ref("")  // will fix
+const saving = ref(false)
+const eventEdit = ref<{open: boolean; idx: number | null; item: any}>({ open: false, idx: null, item: {} })
+const localEvents = ref<any[] | null>(null)
+
+
+
+function startEdit(key: string, val: string) {
+  editingKey.value = key
+  editContent.value = val || ''
+}
+
+function cancelEdit() {
+  editingKey.value = null
+  editContent.value = ''
+  eventEdit.value = { open: false, idx: null, item: {} }
+}
+
+async function saveEdit(key: string) {
+  if (!detail.value) return
+  saving.value = true
+  try {
+    const ns = { ...sections.value, [key]: editContent.value }
+    await updateDynastySections(detail.value.id, ns)
+    detail.value.description = JSON.stringify(ns)
+    editingKey.value = null
+    editContent.value = ''
+  } catch (e: any) {
+    alert('保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function startEventEdit(idx: number | null, item: any) {
+  eventEdit.value = { open: true, idx, item: { ...item } }
+}
+
+function addEvent() {
+  startEventEdit(null, { name: '', year: '', description: '', significance: '', era: '', type: '政治' })
+}
+
+function deleteEvent(idx: number) {
+  if (localEvents.value) localEvents.value.splice(idx, 1)
+}
+
+function saveEventItem() {
+  if (!localEvents.value) return
+  const item = { ...eventEdit.value.item }
+  if (eventEdit.value.idx === null) {
+    localEvents.value.push(item)
+  } else {
+    localEvents.value[eventEdit.value.idx] = item
+  }
+  eventEdit.value = { open: false, idx: null, item: {} }
+}
+
+async function saveEvents() {
+  if (!detail.value || !localEvents.value) return
+  saving.value = true
+  try {
+    const ns = { ...sections.value, events: localEvents.value }
+    await updateDynastySections(detail.value.id, ns)
+    detail.value.description = JSON.stringify(ns)
+    editingKey.value = null
+  } catch (e: any) {
+    alert('保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+// Member editing
+const localMembers = ref<any[] | null>(null)
+const memberEditing = ref(false)
+const memberSaving = ref(false)
+const memberFormOpen = ref(false)
+const memberForm = ref({ name: '', title: '', lifespan: '', role: '名臣', description: '' })
+const memberFormIdx = ref<number | null>(null)
+let _figCache: Record<number, any[]> = {}
+
+function getCachedHistoricalFigures(dynastyId: number): any[] {
+  if (!_figCache[dynastyId]) {
+    _figCache[dynastyId] = getHistoricalFigures(dynastyId)
+  }
+  return _figCache[dynastyId] || []
+}
+
+function mergeMembers(list: any[]): any[] {
+  const seen = new Set<string>()
+  return list.filter(m => {
+    if (seen.has(m.name)) return false
+    seen.add(m.name)
+    return true
+  }).map((m, i) => ({ ...m, id: -(i + 1) }))
+}
+
+function getRoleColor(role: string): string {
+  const colors: Record<string, string> = {
+    '皇帝': '#8b1a1a', '皇后': '#c0392b', '名后': '#c0392b', '太后': '#c0392b',
+    '皇子': '#5a4a3a', '公主': '#8b6914', '宰相': '#2c3e50', '名臣': '#2c3e50',
+    '诗人': '#8b6914', '文学家': '#8b6914', '史学家': '#4a6741', '科学家': '#4a6741',
+    '大将': '#1a3a2a', '将领': '#1a3a2a', '改革家': '#c0392b', '谋士': '#2d2d2d',
+    '宦官': '#5a4a3a', '外交家': '#2c3e50', '僧侣': '#1a3a2a', '艺术家': '#5a4a7a',
+    '名士': '#8b6914', '大臣': '#2c3e50', '政治家': '#2c3e50',
+    '书法家': '#5a4a7a', '画家': '#5a4a7a', '天文学家': '#4a6741',
+    '医学家': '#3a6a4a', '发明家': '#8b6914', '高僧': '#1a3a2a',
+    '航海家': '#2c3e50', '旅行家': '#8b6914',
+  }
+  return colors[role] || '#888'
+}
+
+function startMemberEdit() {
+  const sec = detail.value?.description ? JSON.parse(detail.value.description) : {}
+  const stored = sec.storedMembers || []
+  const localFigs = getCachedHistoricalFigures(detail.value!.id)
+  localMembers.value = mergeMembers([...stored, ...localFigs])
+  memberEditing.value = true
+}
+
+function cancelMemberEdit() {
+  memberEditing.value = false
+  memberFormOpen.value = false
+  memberForm.value = { name: '', title: '', lifespan: '', role: '名臣', description: '' }
+  memberFormIdx.value = null
+}
+
+function addMember() {
+  memberForm.value = { name: '', title: '', lifespan: '', role: '名臣', description: '' }
+  memberFormIdx.value = null
+  memberFormOpen.value = true
+}
+
+function startMemberForm(idx: number, m: any) {
+  memberForm.value = { ...m }
+  memberFormIdx.value = idx
+  memberFormOpen.value = true
+}
+
+function saveMemberItem() {
+  if (!localMembers.value) return
+  localMembers.value.push({ ...memberForm.value })
+  memberFormOpen.value = false
+}
+
+function deleteMember(idx: number) {
+  if (!localMembers.value) return
+  localMembers.value.splice(idx, 1)
+}
+
+async function saveMembers() {
+  if (!detail.value || !localMembers.value) return
+  memberSaving.value = true
+  try {
+    const sec = detail.value.description ? JSON.parse(detail.value.description) : {}
+    const stored = localMembers.value || []
+    sec.storedMembers = stored
+    await updateDynastySections(detail.value.id, sec)
+    detail.value.description = JSON.stringify(sec)
+    // Don't override member grid for non-royal figures
+    detail.value.members = mergeMembers(stored)
+    memberEditing.value = false
+  } catch (e: any) {
+    alert('保存失败: ' + (e.message || '未知错误'))
+  } finally {
+    memberSaving.value = false
+  }
+}
+
+// Merge stored members on initial load
+const origDetail = detail
+// The existing watch or onMounted already handles this
+
 const dynastyEvents = computed(() => {
-  const events = detail.value ? DYNASTY_EVENTS[detail.value.id] || [] : []
+  const events = localEvents.value || (detail.value ? DYNASTY_EVENTS[detail.value.id] || [] : [])
   return [...events].sort((a, b) => sortYear(a.year) - sortYear(b.year))
 })
 const loading = ref(true)
@@ -282,6 +593,21 @@ const sections = computed<DynastySections>(() => {
   try {
     return detail.value?.description ? JSON.parse(detail.value.description) : {} as DynastySections
   } catch { return {} as DynastySections }
+})
+
+// Initialize local data stores
+watch(() => detail.value, (val) => {
+  if (!val) return
+  const sec = val.description ? JSON.parse(val.description) : {}
+  if (!localEvents.value) {
+    localEvents.value = sec.events || DYNASTY_EVENTS[val.id] || []
+  }
+  const storedMembers = sec.storedMembers || []
+  const localFigs = getCachedHistoricalFigures(val.id)
+  const all = mergeMembers([...storedMembers, ...localFigs])
+  if (all.length > 0) {
+    val.members = [...(val.members || []), ...all]
+  }
 })
 
 onMounted(async () => {
@@ -428,5 +754,96 @@ function splitParagraphs(text: string): string[] {
   transition: background 0.3s ease;
 }
 .content-section p:hover { background: var(--color-card-hover); }
+
+
+/* Edit buttons */
+.edit-btn {
+  display: inline-block; margin-left: 10px; padding: 2px 10px;
+  font-size: 0.72rem; background: var(--color-card);
+  border: 1px solid var(--color-border); border-radius: 4px;
+  color: var(--color-text-muted); cursor: pointer;
+  transition: all 0.2s ease; vertical-align: middle; line-height: 1.6;
+}
+.edit-btn:hover { background: var(--color-oat); color: var(--color-terracotta); border-color: var(--color-terracotta); }
+
+.edit-editor { margin: 12px 0; }
+.edit-textarea {
+  width: 100%; min-height: 120px; padding: 12px 14px;
+  font-size: 0.9rem; line-height: 1.7;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-card); color: var(--color-text);
+  resize: vertical; font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+.edit-textarea:focus { outline: none; border-color: var(--color-terracotta); }
+.edit-actions { display: flex; gap: 8px; margin-top: 10px; }
+.save-btn {
+  padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
+  border: none; cursor: pointer; font-weight: 600;
+  background: var(--color-terracotta); color: #fff; transition: all 0.2s ease;
+}
+.save-btn:hover { background: #B05A30; }
+.save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cancel-btn {
+  padding: 8px 20px; font-size: 0.85rem; border-radius: 6px;
+  border: 1px solid var(--color-border); cursor: pointer; font-weight: 600;
+  background: var(--color-card); color: var(--color-text); transition: all 0.2s ease;
+}
+.cancel-btn:hover { background: var(--color-border); }
+
+/* Event/Member editor panels (shared) */
+.edit-event-panel, .edit-member-panel {
+  background: var(--color-card); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: 20px; margin: 12px 0;
+}
+.edit-event-toolbar {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.add-event-btn {
+  padding: 8px 16px; font-size: 0.85rem; border-radius: 6px;
+  background: var(--color-sage); color: #fff; border: none; cursor: pointer;
+  font-weight: 600; transition: all 0.2s ease; margin-right: auto;
+}
+.add-event-btn:hover { background: var(--color-moss); }
+.event-form {
+  background: rgba(232, 220, 199, 0.3); border-radius: var(--radius-sm);
+  padding: 18px; margin-bottom: 16px; border: 1px solid var(--color-border);
+}
+.ef-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.ef-row label { width: 80px; flex-shrink: 0; font-size: 0.82rem; color: var(--color-text-light); padding-top: 8px; font-weight: 600; }
+.ef-input, .ef-textarea {
+  flex: 1; padding: 8px 12px; font-size: 0.85rem;
+  border: 1px solid var(--color-border); border-radius: 4px;
+  background: #fff; color: var(--color-text); font-family: inherit;
+}
+.ef-input:focus, .ef-textarea:focus { outline: none; border-color: var(--color-terracotta); }
+.ef-textarea { resize: vertical; min-height: 60px; }
+
+.edit-event-list { display: flex; flex-direction: column; gap: 6px; }
+.event-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--color-card);
+  border: 1px solid var(--color-border); border-radius: 6px;
+  transition: background 0.2s ease;
+}
+.event-list-item:hover { background: var(--color-card-hover); }
+.eli-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.eli-info strong { font-size: 0.9rem; color: var(--color-earth); }
+.eli-year { font-size: 0.78rem; color: var(--color-terracotta); font-weight: 600; }
+.eli-type { font-size: 0.65rem; color: #fff; padding: 1px 8px; border-radius: 8px; font-weight: 600; }
+.eli-actions { display: flex; gap: 4px; }
+.eli-btn { padding: 3px 10px; font-size: 0.72rem; border-radius: 4px; border: 1px solid var(--color-border); cursor: pointer; }
+.eli-btn.edit { background: var(--color-card); color: var(--color-text); }
+.eli-btn.edit:hover { border-color: var(--color-terracotta); color: var(--color-terracotta); }
+.eli-btn.del { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.eli-btn.del:hover { background: #fee2e2; }
+.mli-title { font-size: 0.72rem; color: var(--color-text-muted); margin: 0 4px; }
+
+@media (max-width: 768px) {
+  .ef-row { flex-direction: column; }
+  .ef-row label { width: auto; }
+  .event-list-item { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .event-list-item .eli-actions { align-self: flex-end; }
+}
 
 </style>

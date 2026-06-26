@@ -10,9 +10,11 @@ import com.example.history.repository.DynastyRepository;
 import com.example.history.repository.RulerChildRepository;
 import com.example.history.repository.RulerRepository;
 import com.example.history.repository.RoyalMemberRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +59,18 @@ public class DynastyService {
 
     public List<RulerChild> getChildren(Long rulerId) {
         return childRepository.findByRulerIdOrderBySortOrderAsc(rulerId);
+    }
+
+    public Dynasty updateSections(Long id, Map<String, Object> sections) {
+        Dynasty d = dynastyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Dynasty not found: " + id));
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            d.setDescription(mapper.writeValueAsString(sections));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize sections", e);
+        }
+        return dynastyRepository.save(d);
     }
 
     private DynastyListDTO toListDTO(Dynasty d) {

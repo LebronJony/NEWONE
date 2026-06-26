@@ -22,3 +22,7 @@ export function getMembers(dynastyId: number): Promise<RoyalMember[]> {
 export function getChildren(rulerId: number): Promise<RulerChild[]> {
   return api.get(`/rulers/${rulerId}/children`).then(res => res.data)
 }
+
+export function updateDynastySections(id: number, sections: Record<string, any>): Promise<DynastyDetail> {
+  return api.put(`/dynasties/${id}/sections`, sections).then(res => res.data)
+}

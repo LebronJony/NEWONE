@@ -3,12 +3,14 @@ package com.example.history.controller;
 import com.example.history.dto.DynastyDetailDTO;
 import com.example.history.dto.DynastyListDTO;
 import com.example.history.entity.Ruler;
+import com.example.history.entity.Dynasty;
 import com.example.history.entity.RoyalMember;
 import com.example.history.service.DynastyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dynasties")
@@ -38,5 +40,11 @@ public class DynastyController {
     @GetMapping("/{id}/members")
     public ResponseEntity<List<RoyalMember>> getMembers(@PathVariable Long id) {
         return ResponseEntity.ok(dynastyService.getMembers(id));
+    }
+
+    @PutMapping("/{id}/sections")
+    public ResponseEntity<DynastyDetailDTO> updateSections(@PathVariable Long id, @RequestBody Map<String, Object> sections) {
+        dynastyService.updateSections(id, sections);
+        return ResponseEntity.ok(dynastyService.getDynastyDetail(id));
     }
 }
