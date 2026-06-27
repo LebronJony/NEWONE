@@ -1,0 +1,16 @@
+# 构建输出目录
+frontend/dist/
+backend/src/main/resources/static/assets/
+
+# Node
+node_modules/
+.npm/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
